@@ -9,18 +9,61 @@ $config = array();
 
 // --- TASKS --- //    
 
-    // define your tasks here
-    // 
-    // Syntax: 'taskname' => array('Classname', 'method') 
-    //      OR 'taskname' => array('Classname', 'method', array('some' => 'additional', 'config' => 'parameters)) 
-    //      OR 'taskname' => 'Classname' to use the method 'execute' and no config parameters
-    // the defined method is called with the parameters $params, $config and $job
-    $config['tasks'] = array(
-        'store' => '\\CacheQueue\\Task\\Store',
-        'retweets' => array('\\CacheQueue\\Task\\Social', 'getRetweets'),
-        'likes' => array('\\CacheQueue\\Task\\Social', 'getLikes'),
-        'plusones' => array('\\CacheQueue\\Task\\Social', 'getPlusOnes')
-    );
+    /*
+     * define your tasks here
+     * 
+     * Syntax: 'taskname' => array('Classname', 'method') 
+     *      OR 'taskname' => array('Classname', 'method', array('some' => 'additional', 'config' => 'parameters)) 
+     *      OR 'taskname' => 'Classname' to use the method 'execute' and no config parameters
+     * 
+     * the defined method is called with the parameters $params, $config and $job
+     */
+    $config['tasks'] = array();
+    
+    /*
+     * stores/caches the given params as data
+     * params:
+     * any string, number, bool or array to store under the given key
+     */
+    $config['tasks']['store'] = '\\CacheQueue\\Task\\Store';
+    
+    /*
+     * get the retweets of a url
+     * params:
+     * the absolute URL to get twitter retweets for as string
+     */
+    $config['tasks']['retweets'] = array('\\CacheQueue\\Task\\Social', 'getRetweets');
+    
+    /*
+     * get the likes of a url
+     * params:
+     * the absolute URL to get facebook likes for as string
+     */
+    $config['tasks']['likes'] = array('\\CacheQueue\\Task\\Social', 'getLikes');
+    
+    /*
+     * get the google plus one hits of a url
+     * params: 
+     * the absolute URL to get google plus ones for as string
+     */
+    $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes');
+
+    /*
+     * this is an fully featured example of a task declaration
+     * copy&paste this for your own tasks ;)
+     * 
+     * params:
+     * an array with
+     *   'foo' => 'the foo'
+     *   'bar' => 'some bar or baz'
+     */
+    $config['tasks']['example'] = array('YourClass', 'yourMethod', array(
+        'some' => 'options',
+        'for' => 'this task',
+        'defaultBar' => 'some bar or baz',
+        'login' => 'foobar',
+        'password' => 'password'
+    ));
 
 
 // --- CONNECTION SETTINGS --- //  
