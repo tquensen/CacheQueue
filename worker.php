@@ -17,7 +17,6 @@ $workerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($workerClass, '\\')).'
 require_once('CacheQueue/ILogger.php');
 require_once('CacheQueue/IConnection.php');
 require_once('CacheQueue/IWorker.php');
-require_once('CacheQueue/ITask.php');
 require_once($loggerFile);
 require_once($connectionFile);
 require_once($workerFile);

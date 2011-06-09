@@ -25,7 +25,9 @@ class Worker implements IWorker
             throw new \Exception('invalid task '.$task.'.');
         }
 
-        $taskClass = $this->tasks[$task];
+        $taskData = (array) $this->tasks[$task];
+        $taskClass = $this->tasks[$task][0];
+        $taskMethod = !empty($this->tasks[$task][1]) ? $this->tasks[$task][1] : 'execute';
         if (!class_exists($taskClass)) {
             $taskFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
             require_once($taskFile);
@@ -34,15 +36,18 @@ class Worker implements IWorker
         if (!class_exists($taskClass)) {
             throw new \Exception('class '.$taskClass.' not found.');
         }
-
-        $task = new $taskClass;     
-        if (!$task instanceof \CacheQueue\ITask) {
-            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
+        if (!method_exists($taskClass, $taskMethod)) {
+            throw new \Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
         }
 
-        $result = $task->execute($params, $job);
+        $task = new $taskClass;     
+//        if (!$task instanceof \CacheQueue\ITask) {
+//            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
+//        }
 
-        if ($result !== false) {
+        $result = $task->$taskMethod($params, $job);
+
+        if ($result !== null) {
             $this->setData($job['key'], $result);
         }
 

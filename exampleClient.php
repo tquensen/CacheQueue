@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?php
 
+// initiate and/or get the client class,
+// use this when you have access to the full CacheQueue lib and config file
 function getCacheQueueClient() {
     static $client = null;
     
@@ -35,6 +37,32 @@ function getCacheQueueClient() {
 
     $connection = new $connectionClass($config['connection']);
     $client = new $clientClass($connection);
+    
+    return $client;
+}
+
+// if you dont want to use the full CacheQueue stuff on client side,
+// this should be everything you should need for the client
+function simpleGetCacheQueueClient() {
+    static $client = null;
+    
+    if ($client) {
+        return $client;
+    }
+    
+    //you only need the connection and the client class and their interfaces
+    $filePath = dirname(__FILE__).'/lib/CacheQueue';
+    require_once($filePath.'/IConnection.php');
+    require_once($filePath.'/IClient.php');
+    require_once($filePath.'/MongoConnection.php');
+    require_once($filePath.'/Client.php');   
+
+    //define your connection settings manually
+    $connection = new \CacheQueue\MongoConnection(array(
+        'database' => 'cache_queue',
+        'collection' => 'cache'
+    ));
+    $client = new \CacheQueue\Client($connection);
     
     return $client;
 }
