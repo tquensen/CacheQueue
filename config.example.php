@@ -12,11 +12,14 @@ $config = array();
     // define your tasks here
     // 
     // Syntax: 'taskname' => array('Classname', 'method') 
-    //      OR 'taskname' => 'Classname' to use the method 'execute'
-    // the defined method is called with the parameters $params and $job
+    //      OR 'taskname' => array('Classname', 'method', array('some' => 'additional', 'config' => 'parameters)) 
+    //      OR 'taskname' => 'Classname' to use the method 'execute' and no config parameters
+    // the defined method is called with the parameters $params, $config and $job
     $config['tasks'] = array(
         'store' => '\\CacheQueue\\Task\\Store',
-        'twitter_retweets' => array('\\CacheQueue\\Task\\Twitter', 'getRetweets')
+        'retweets' => array('\\CacheQueue\\Task\\Social', 'getRetweets'),
+        'likes' => array('\\CacheQueue\\Task\\Social', 'getLikes'),
+        'plusones' => array('\\CacheQueue\\Task\\Social', 'getPlusOnes')
     );
 
 

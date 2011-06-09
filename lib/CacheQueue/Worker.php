@@ -28,6 +28,8 @@ class Worker implements IWorker
         $taskData = (array) $this->tasks[$task];
         $taskClass = $this->tasks[$task][0];
         $taskMethod = !empty($this->tasks[$task][1]) ? $this->tasks[$task][1] : 'execute';
+        $taskConfig = !empty($this->tasks[$task][2]) ? $this->tasks[$task][2] : array();
+        
         if (!class_exists($taskClass)) {
             $taskFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
             require_once($taskFile);
@@ -45,7 +47,7 @@ class Worker implements IWorker
 //            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
 //        }
 
-        $result = $task->$taskMethod($params, $job);
+        $result = $task->$taskMethod($params, $taskConfig, $job);
 
         if ($result !== null) {
             $this->setData($job['key'], $result);
