@@ -26,16 +26,23 @@ $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
 $worker = new $workerClass($connection, $config['tasks']);
 
-$processed = 0;
-$errors = 0;
 do {
-    $status = null;
-    try {
-        $status = $worker->work(); 
-    } catch (Exception $e) {
-        $errors++;
-        $logger->logError('Worker: error '.(string) $e);
+    
+    $processed = 0;
+    $errors = 0;
+    do {
+        $status = null;
+        try {
+            $status = $worker->work(); 
+        } catch (Exception $e) {
+            $errors++;
+            $logger->logError('Worker: error '.(string) $e);
+        }
+    } while ($status !== false && ++$processed);
+    if ($processed) {
+        $logger->logNotice('Worker: finished with '.$processed.' Tasks ('.$errors.' errors).');
     }
-} while ($status !== false && ++$processed);
+    sleep(1); 
+} while(true);
 
-$logger->logNotice('Worker: finished with '.$processed.' Tasks ('.$errors.' errors).');
+
