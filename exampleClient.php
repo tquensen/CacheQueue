@@ -42,7 +42,7 @@ function getCacheQueueClient() {
 }
 
 // if you dont want to use the full CacheQueue stuff on client side,
-// this should be everything you should need for the client
+// this should be everything you need for the client to work
 function simpleGetCacheQueueClient() {
     static $client = null;
     
@@ -57,7 +57,8 @@ function simpleGetCacheQueueClient() {
     require_once($filePath.'/MongoConnection.php');
     require_once($filePath.'/Client.php');   
 
-    //define your connection settings manually
+    //define your connection settings manually. 
+    //this must match the server side connection configuration to work 
     $connection = new \CacheQueue\MongoConnection(array(
         'database' => 'cache_queue',
         'collection' => 'cache'

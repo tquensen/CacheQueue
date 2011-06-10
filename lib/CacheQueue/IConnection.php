@@ -7,13 +7,13 @@ interface IConnection
     
     public function get($key);
     
-    public function queue($key, $task, $params, $freshUntil);
+    public function set($key, $data, $freshFor, $force = false);
+
+    public function queue($key, $task, $params, $freshFor, $force = false);
     
     public function getJob();
     
     public function setData($key, $data);
     
     public function getQueueCount();
-    
-    public function cleanup($maxFreshUntil);
 }

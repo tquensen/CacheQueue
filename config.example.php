@@ -71,7 +71,8 @@ $config = array();
     //settings for mongodb
     $config['connection'] = array(
         'database' => 'cache_queue',
-        'collection' => 'cache'
+        'collection' => 'cache',
+        'safe' => false
     );
 
 

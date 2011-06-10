@@ -8,9 +8,13 @@ interface IClient
 
     public function get($key);
 
-    public function queue($key, $task, $params, $freshUntil);
+    public function set($key, $data, $freshFor, $force = false);
 
-    public function getOrQueue($key, $task, $params, $freshUntil);
-    
+    public function queue($key, $task, $params, $freshFor, $force = false);
+
+    public function getOrSet($key, $callback, $params, $freshFor, $force = false);
+
+    public function getOrQueue($key, $task, $params, $freshFor, $force = false);
+
 }
 
