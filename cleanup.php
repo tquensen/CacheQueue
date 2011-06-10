@@ -20,6 +20,31 @@ require_once($connectionFile);
 $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
 
-$status = $connection->cleanup(time() - $config['cleanupTime']);
+if (!isset($argv[1])) {
+    $logger->logError('Cleanup: parameter required!');
+}
 
-$logger->logNotice('Cleanup: '.($status ? 'success' : 'error'));
+switch (strtolower($argv[1])) {
+    case 'all':
+        $status = $connection->clear(0, true);
+        $logger->logNotice('Cleanup ALL: '.($status ? 'success' : 'error'));
+        break;
+    case 'persistent':
+        $status = $connection->removePersistent();
+        $logger->logNotice('Cleanup PERSISTENT: '.($status ? 'success' : 'error'));
+        break;
+    case 'key':
+        $key = !empty($argv[2]) ? $argv[2] : false;
+        $force = !empty($argv[3]);
+        if (!$key) {
+            $logger->logError('Cleanup KEY: key required!');
+        }
+        $status = $connection->remove($key, $force);
+        $logger->logNotice('Cleanup KEY '.$key.($force ? ' (force)' : '').': '.($status ? 'success' : 'error'));
+        break;
+     case 'outdated':
+        $outdatedFor = !empty($argv[2]) ? (int) $argv[2] : 0;
+        $status = $connection->clear($outdatedFor, false);
+        $logger->logNotice('Cleanup OUTDATED (for '.$outdatedFor.'s): '.($status ? 'success' : 'error'));
+        break;
+}

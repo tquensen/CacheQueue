@@ -3,9 +3,6 @@ $config = array();
 
 // --- GENERAL SETTINGS --- //
 
-    //remove all cache that is outdated (not fresh) for more than cleanupTime seconds
-    $config['cleanupTime'] = 60 * 60 * 24;
-
 
 // --- TASKS --- //    
 

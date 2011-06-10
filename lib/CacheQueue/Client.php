@@ -27,6 +27,12 @@ class Client implements IClient
         return $this->connection->set($key, $data, $freshFor, $force);
     }
     
+    
+    public function queue($key, $task, $params, $freshFor, $force = false)
+    {
+        return $this->connection->queue($key, $task, $params, $freshFor, $force);
+    }
+    
     public function getOrSet($key, $callback, $params, $freshFor, $force = false)
     {
         $result = $this->connection->get($key);
@@ -45,11 +51,6 @@ class Client implements IClient
             $this->queue($key, $task, $params, $freshFor, $force);
         }
         return empty($result['data']) ? false : $result['data'];
-    }
-
-    public function queue($key, $task, $params, $freshFor, $force = false)
-    {
-        return $this->connection->queue($key, $task, $params, $freshFor, $force);
-    }
+    }   
 
 }

@@ -16,4 +16,10 @@ interface IConnection
     public function setData($key, $data);
     
     public function getQueueCount();
+    
+    public function remove($key, $force = false);
+    
+    public function removePersistent();
+    
+    public function clear($outdatedFor = 0, $force = false);
 }

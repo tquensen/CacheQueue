@@ -33,7 +33,6 @@ function getCacheQueueClient() {
     require_once($connectionFile);
     require_once($clientFile);
     */
-    
 
     $connection = new $connectionClass($config['connection']);
     $client = new $clientClass($connection);

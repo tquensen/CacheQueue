@@ -184,4 +184,66 @@ class MongoConnection implements IConnection
         return $this->collection->count(array('queued' => true));
     }
     
+    public function remove($key, $force = false)
+    {
+        try {
+            if ($force) {
+                return (bool) $this->collection->remove(
+                        array(
+                            '_id' => $key
+                        ),
+                        array('safe' => $this->safe)
+                    );
+            } else {
+                return (bool) $this->collection->remove(
+                        array(
+                            '_id' => $key,
+                            'fresh_until' => array('$lt' => new \MongoDate()),
+                            'persistent' => false
+                        ),
+                        array('safe' => $this->safe)
+                    );
+            }
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+    
+    public function removePersistent()
+    {
+        try {
+            return (bool) $this->collection->remove(
+                    array(
+                        'persistent' => true
+                    ),
+                    array('safe' => $this->safe)
+                );
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+    
+    public function clear($outdatedFor = 0, $force = false)
+    {
+        try {
+            if ($force) {
+                return (bool) $this->collection->remove(
+                        array(
+                        ),
+                        array('safe' => $this->safe)
+                    );
+            } else {
+                return (bool) $this->collection->remove(
+                        array(
+                            'fresh_until' => array('$lt' => new \MongoDate(time() - $outdatedFor)),
+                            'persistent' => false
+                        ),
+                        array('safe' => $this->safe)
+                    );
+            }
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+    
 }
