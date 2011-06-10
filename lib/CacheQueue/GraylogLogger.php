@@ -14,6 +14,7 @@ class GraylogLogger implements ILogger
         $this->graylogHostname = $config['graylogHostname'];
         $this->graylogPort = $config['graylogPort'];
         $this->host = $config['host'];
+        $this->facility = !empty($config['facility']) ? $config['facility'] : 'CacheQueue';
     }
 
     public function logError($text)
@@ -34,7 +35,7 @@ class GraylogLogger implements ILogger
         $gelf->setHost($this->host);
         $gelf->setTimestamp(time());
         $gelf->setLevel($level);
-        $gelf->setFacility('clock');
+        $gelf->setFacility($this->facility);
         $gelf->send();
     }
 

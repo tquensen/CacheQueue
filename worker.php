@@ -25,8 +25,11 @@ $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
 $worker = new $workerClass($connection, $config['tasks']);
 
+//log a message after proceeding X tasks without pause
+$noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break
+
 do {
-    
+    $start = microtime(true);
     $processed = 0;
     $errors = 0;
     do {
@@ -37,11 +40,22 @@ do {
             $errors++;
             $logger->logError('Worker: error '.(string) $e);
         }
-    } while ($status !== false && ++$processed);
+        
+        //pause processing for 1 sec if no queued task was found
+        if ($status === false) {
+            break;
+        }
+        
+        $processed++;
+
+        if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
+            $end = microtime(true);
+            $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($end-$start, 4,'.','')).'s so far...');
+        }
+    } while (true);
     if ($processed) {
-        $logger->logNotice('Worker: finished with '.$processed.' Tasks ('.$errors.' errors).');
+        $end = microtime(true);
+        $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($end-$start, 4,'.','')).'s - ready for new tasks');
     }
     sleep(1); 
 } while(true);
-
-

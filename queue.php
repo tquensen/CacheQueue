@@ -21,12 +21,14 @@ require_once($connectionFile);
 $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
 
+$tasksPerWorker = 10;
+
 do {
     try {
         if ($count = $connection->getQueueCount()) {
-            $logger->logNotice('Queue: starting '.$count.' new Worker.');
-            echo 'Queue: starting '.$count.' new Worker.'."\n";
-            for ($i=0; $i<$count; $i++) {
+            $workerCount = ceil($count / $tasksPerWorker);
+            $logger->logNotice('Queue: found '.$count.' new tasks, starting '.$workerCount.' worker.');
+            for ($i=0; $i<$workerCount; $i++) {
                 exec($workerFile);
             }
         } 
