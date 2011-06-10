@@ -11,7 +11,7 @@ class Analytics
         require_once 'Zend/Gdata.php';
         require_once 'Zend/Oauth/Token/Access.php';
         $config = array(
-            'requestScheme' => Zend_Oauth::REQUEST_SCHEME_HEADER,
+            'requestScheme' => \Zend_Oauth::REQUEST_SCHEME_HEADER,
             'version' => '1.0',
             'signatureMethod' => 'HMAC-SHA1', 
             //'callbackUrl' => 'http://example.com/',
@@ -19,11 +19,11 @@ class Analytics
             'consumerKey' => $consumerKey,
             'consumerSecret' => $consumerSecret
         );
-        $token = new Zend_Oauth_Token_Access();
+        $token = new \Zend_Oauth_Token_Access();
         $token->setToken($token);
         $token->setTokenSecret($tokenSecret);
         $client = $token->getHttpClient($config);
-        $this->client = new Zend_Gdata($client);
+        $this->client = new \Zend_Gdata($client);
         return $this->client;
     }
     
@@ -50,11 +50,11 @@ class Analytics
 
         $count = 0;
 
-        $results = self::$client->getFeed($reportURL);
+        $results = $client->getFeed($reportURL);
         $xml = $results->getXML();
 
         Zend_Feed::lookupNamespace('default');
-        $feed = new Zend_Feed_Atom(null, $xml);
+        $feed = new \Zend_Feed_Atom(null, $xml);
         foreach($feed as $entry) {
             $count = (int)$entry->metric->getDOM()->getAttribute('value');
             break;
