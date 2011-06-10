@@ -46,6 +46,39 @@ $config = array();
     $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes');
 
     /*
+     * get analytics pageviews of a given url
+     * you need a registered oAuth application on the server/task side,
+     * and an Analytics Account, a token and a token secret on the client side
+     * 
+     * this task requires the Zend Framework in your include_path!
+     * 
+     * register your oAuth registration here to get a consumerKey/Secret
+     * https://www.google.com/accounts/ManageDomains
+     * 
+     * You can retrieve an oauthToken and tokenSecret here:
+     * http://googlecodesamples.com/oauth_playground/index.php
+     * choose Analytics as scope, select HMAC-SHA1 as signature method,
+     * fill in your consumerKey and consumerSecret, then get and authorize a Request Token,
+     * and upgrade to an access token.
+     * use this access token and tken secret on the client side when queueing the analytics task
+     * 
+     * params:
+     * an array with
+     *   'url' => 'the url to get pageviews for'
+     *   'token' => 'the oAuth token'
+     *   'tokenSecret' => 'the oAuth token secret',
+     *   'profileId' => 'the Google Analytics profile ID'
+     * 
+     * options:
+     *   'consumerKey' => 'the consumer key'
+     *   'consumerSecret' => 'theconsumer secret'
+     */
+    $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
+        'consumerKey' => 'your.key',
+        'consumerSecret' => 'YourConsumerSecret'
+    ));
+    
+    /*
      * this is an fully featured example of a task declaration
      * copy&paste this for your own tasks ;)
      * 
@@ -53,6 +86,11 @@ $config = array();
      * an array with
      *   'foo' => 'the foo'
      *   'bar' => 'some bar or baz'
+     * 
+     * options:
+     * an array with
+     *   'some' => 'options'
+     *   'for' => 'this task'
      */
     $config['tasks']['example'] = array('YourClass', 'yourMethod', array(
         'some' => 'options',
