@@ -26,9 +26,9 @@ class Worker implements IWorker
         }
 
         $taskData = (array) $this->tasks[$task];
-        $taskClass = $this->tasks[$task][0];
-        $taskMethod = !empty($this->tasks[$task][1]) ? $this->tasks[$task][1] : 'execute';
-        $taskConfig = !empty($this->tasks[$task][2]) ? $this->tasks[$task][2] : array();
+        $taskClass = $taskData[0];
+        $taskMethod = !empty($taskData[1]) ? $taskData[1] : 'execute';
+        $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
         
         if (!class_exists($taskClass)) {
             $taskFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';

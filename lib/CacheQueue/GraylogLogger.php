@@ -31,7 +31,7 @@ class GraylogLogger implements ILogger
         $gelf = new \GELFMessage($this->graylogHostname, $this->graylogPort);
 
         $gelf->setShortMessage($message);
-        $gelf->setHost('s1.guruwriter.de');
+        $gelf->setHost($this->host);
         $gelf->setTimestamp(time());
         $gelf->setLevel($level);
         $gelf->setFacility('clock');
