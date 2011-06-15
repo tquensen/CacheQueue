@@ -99,6 +99,21 @@ interface IClient
      * @return bool if the request was successful 
      */
     public function outdateAll($force = false, $persistent = null);
+    
+    /**
+     * sets the connection class
+     * 
+     * @param IConnection $connection an IConnection instance
+     */
+    public function setConnection(IConnection $connection);
+    
+    /**
+     * gets the connection
+     * 
+     * @return IConnection the connection instance
+     */
+    public function getConnection();
+
 
 }
 

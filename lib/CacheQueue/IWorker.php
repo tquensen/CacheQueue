@@ -30,6 +30,20 @@ interface IWorker
     public function setData($key, $data);
     
     /**
+     * sets the connection class
+     * 
+     * @param IConnection $connection an IConnection instance
+     */
+    public function setConnection(IConnection $connection);
+    
+    /**
+     * gets the connection
+     * 
+     * @return IConnection the connection instance
+     */
+    public function getConnection();
+    
+    /**
      * sets a logger which can be accessed by the tasks
      * 
      * @param ILogger $logger an ILogger instance

@@ -77,5 +77,15 @@ class Worker implements IWorker
     {
         return $this->logger;
     }
+    
+    public function setConnection(IConnection $connection)
+    {
+         $this->connection = $connection;
+    }
+    
+    public function getConnection()
+    {
+        return $this->connection;
+    }
 
 }

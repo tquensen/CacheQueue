@@ -72,5 +72,15 @@ class Client implements IClient
     {
         return $this->connection->removeAll($force, $persistent);
     }
+    
+    public function setConnection(IConnection $connection)
+    {
+         $this->connection = $connection;
+    }
+    
+    public function getConnection()
+    {
+        return $this->connection;
+    }
 
 }

@@ -67,7 +67,7 @@ class MongoConnection implements IConnection
         //$return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
-        //$return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
+        $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
         
         return $return;
     }
