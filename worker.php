@@ -1,5 +1,10 @@
 #!/usr/bin/php
 <?php
+//only available via command line (this file shold be outside the web folder anyway)
+if (empty($_SERVER['argc'])) {
+    die();
+}
+
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
 
 $configFile = dirname(__FILE__).'/config.php';
