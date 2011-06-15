@@ -28,6 +28,7 @@ function getCacheQueueClient() {
 
     //add CacheQueue parent folder to include path
     set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+    require_once('CacheQueue/Exception.php');
     require_once('CacheQueue/IConnection.php');
     require_once('CacheQueue/IClient.php');
     require_once($connectionFile);
@@ -51,9 +52,10 @@ function simpleGetCacheQueueClient() {
     
     //you only need the connection and the client class and their interfaces
     $filePath = dirname(__FILE__).'/lib/CacheQueue';
+    require_once($filePath.'/Exception.php');
     require_once($filePath.'/IConnection.php');
     require_once($filePath.'/IClient.php');
-    require_once($filePath.'/MongoConnection.php');
+    require_once($filePath.'/MongoConnection.php'); // or require_once($filePath.'/DummyConnection.php');
     require_once($filePath.'/Client.php');   
 
     //define your connection settings manually. 

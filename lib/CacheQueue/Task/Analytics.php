@@ -61,7 +61,7 @@ class Analytics
         }
         
         if ($logger = $worker->getLogger()) {
-            $logger->logNotice('Analytics: URL='.$reportURL.' / COUNT='.$count);
+            $logger->logDebug('Analytics: URL='.$reportURL.' / COUNT='.$count);
         }
 
         return (int) $count;
@@ -117,7 +117,7 @@ class Analytics
         }
         
         if ($logger = $worker->getLogger()) {
-            $logger->logNotice('Analytics: TopUrls / COUNT='.count($topUrls));
+            $logger->logDebug('Analytics: TopUrls / COUNT='.count($topUrls));
         }
 
         return $topUrls;

@@ -27,6 +27,11 @@ class GraylogLogger implements ILogger
         $this->doLog($text, 5);
     }
     
+    public function logDebug($text)
+    {
+        $this->doLog($text, 7);
+    }
+    
     private function doLog($message, $level)
     {
         $gelf = new \GELFMessage($this->graylogHostname, $this->graylogPort);

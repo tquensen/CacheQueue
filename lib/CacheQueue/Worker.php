@@ -24,7 +24,7 @@ class Worker implements IWorker
         $params = $job['params'];
 
         if (empty($this->tasks[$task])) {
-            throw new \Exception('invalid task '.$task.'.');
+            throw new Exception('invalid task '.$task.'.');
         }
 
         $taskData = (array) $this->tasks[$task];
@@ -38,10 +38,10 @@ class Worker implements IWorker
         }
 
         if (!class_exists($taskClass)) {
-            throw new \Exception('class '.$taskClass.' not found.');
+            throw new Exception('class '.$taskClass.' not found.');
         }
         if (!method_exists($taskClass, $taskMethod)) {
-            throw new \Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
+            throw new Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
         }
 
         $task = new $taskClass;     
