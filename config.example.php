@@ -79,6 +79,44 @@ $config = array();
     ));
     
     /*
+     * get list of urls ith the most pageviews
+     * you need a registered oAuth application on the server/task side,
+     * and an Analytics Account, a token and a token secret on the client side
+     * 
+     * this task requires the Zend Framework in your include_path!
+     * 
+     * register your oAuth registration here to get a consumerKey/Secret
+     * https://www.google.com/accounts/ManageDomains
+     * 
+     * You can retrieve an oauthToken and tokenSecret here:
+     * http://googlecodesamples.com/oauth_playground/index.php
+     * choose Analytics as scope, select HMAC-SHA1 as signature method,
+     * fill in your consumerKey and consumerSecret, then get and authorize a Request Token,
+     * and upgrade to an access token.
+     * use this access token and tken secret on the client side when queueing the analytics task
+     * 
+     * params:
+     * an array with
+     *   'url' => 'only consider urls beginning with this prefix',
+     *   'count' => 'limit results to this number (overwrites count option)',
+     *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
+     *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
+     *   'token' => 'the oAuth token'
+     *   'tokenSecret' => 'the oAuth token secret',
+     *   'profileId' => 'the Google Analytics profile ID'
+     * 
+     * options:
+     *   'consumerKey' => 'the consumer key'
+     *   'consumerSecret' => 'theconsumer secret',
+     *   'count' => 'limit results to this number (can be overwritten by the count parameter)'
+     */
+    $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls', array(
+        'consumerKey' => 'your.key',
+        'consumerSecret' => 'YourConsumerSecret',
+        'count' => 20
+    ));
+    
+    /*
      * this is an fully featured example of a task declaration
      * copy&paste this for your own tasks ;)
      * 
