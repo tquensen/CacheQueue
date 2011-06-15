@@ -175,7 +175,7 @@ class MongoConnection implements IConnection
                     array('safe' => $this->safe)
                 );
         } catch (\Exception $e) {
-            return (bool) ($e->getCode() == 11000);
+            return false;
         }
     }
 
@@ -227,7 +227,7 @@ class MongoConnection implements IConnection
                         array(
                             'fresh_until' => array('$lt' => new \MongoDate())
                         ),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
             } else {
                 if ($persistent !== null) {
@@ -235,12 +235,12 @@ class MongoConnection implements IConnection
                         array(
                             'persistent' => (bool) $persistent
                         ),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
                 } else {
                     return (bool) $this->collection->remove(
                         array(),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
                 }
                 
@@ -309,7 +309,7 @@ class MongoConnection implements IConnection
                         array('$set' => array(
                             'fresh_until' => new \MongoDate(time() - 1)
                         )),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
             } else {
                 if ($persistent !== null) {
@@ -321,7 +321,7 @@ class MongoConnection implements IConnection
                             'fresh_until' => new \MongoDate(time() - 1),
                             'persistent' => false
                         )),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
                 } else {
                     return (bool) $this->collection->update(
@@ -331,33 +331,10 @@ class MongoConnection implements IConnection
                             'fresh_until' => new \MongoDate(time() - 1),
                             'persistent' => false
                         )),
-                        array('safe' => $this->safe)
+                        array('safe' => $this->safe, 'multiple' => true)
                     );
                 }
                 
-            }
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-    
-    public function clear($outdatedFor = 0, $force = false)
-    {
-        try {
-            if ($force) {
-                return (bool) $this->collection->remove(
-                        array(
-                        ),
-                        array('safe' => $this->safe)
-                    );
-            } else {
-                return (bool) $this->collection->remove(
-                        array(
-                            'fresh_until' => array('$lt' => new \MongoDate(time() - $outdatedFor)),
-                            'persistent' => false
-                        ),
-                        array('safe' => $this->safe)
-                    );
             }
         } catch (\Exception $e) {
             return false;
