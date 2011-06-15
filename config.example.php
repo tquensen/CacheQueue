@@ -142,6 +142,9 @@ $config = array();
 // --- CONNECTION SETTINGS --- //  
   
     //settings for mongodb
+    /*
+     * your cache collection should have indexes 'queued' => 1, 'fresh_until' => 1 and 'persistent' => 1
+     */
     $config['connection'] = array(
         'database' => 'cache_queue',
         'collection' => 'cache',
