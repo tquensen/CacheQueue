@@ -104,3 +104,23 @@ switch (strtolower($_SERVER['argv'][1])) {
         echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
         break;
 }
+
+function print_help()
+{
+    echo <<<EOF
+Available Tasks:
+    remove KEY|ALL [force|persistent|nonpersistent]
+        removes an entry with the key KEY (or all entries if KEY=ALL) from cache
+        options: if no option is given, removes only outdated, non persistent entries
+                 if "force", removes any entries regardless of freshness or persistent state
+                 if "persistent", removes only matching persistent entries
+                 if "nonpersistent", removes only non persistent entries
+                 
+    outdate KEY|ALL [force|persistent|nonpersistent]
+        outdates an entry with the key KEY (or all entries if KEY=ALL) (sets fresh_until to the past)
+        options: if no option is given, outdates only fresh, non persistent entries
+                 if "force", outdates any entries regardless of freshness or persistent state
+                 if "persistent", outdates only matching persistent entries
+                 if "nonpersistent", outdates only non persistent entries
+EOF;
+}
