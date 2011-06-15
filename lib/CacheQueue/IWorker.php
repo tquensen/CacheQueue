@@ -3,7 +3,7 @@ namespace CacheQueue;
 
 interface IWorker
 {
-    public function __construct(IConnection $connection, $tasks);
+    public function __construct(IConnection $connection, $tasks, $config = array());
     
     /**
      * gets an entry from queue, runs the associated task and updates the value

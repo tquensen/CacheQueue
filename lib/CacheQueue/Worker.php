@@ -8,7 +8,7 @@ class Worker implements IWorker
     
     private $logger = null;
     
-    public function __construct(IConnection $connection, $tasks)
+    public function __construct(IConnection $connection, $tasks, $config = array())
     {
         $this->connection = $connection;
         $this->tasks = $tasks;

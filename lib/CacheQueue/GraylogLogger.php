@@ -8,7 +8,7 @@ class GraylogLogger implements ILogger
     private $graylogPort = null;
     private $host = '';
     
-    public function __construct($config)
+    public function __construct($config = array())
     {
         require_once($config['gelfFile']);
         $this->graylogHostname = $config['graylogHostname'];

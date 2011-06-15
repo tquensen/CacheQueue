@@ -4,7 +4,7 @@ namespace CacheQueue;
 interface IClient
 {
 
-    public function __construct(IConnection $connection);
+    public function __construct(IConnection $connection, $config = array());
 
     /**
      * get a cached entry

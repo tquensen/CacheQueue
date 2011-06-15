@@ -11,7 +11,7 @@ class MongoConnection implements IConnection
     
     private $safe = null;
     
-    public function __construct($config)
+    public function __construct($config = array())
     {
         if (!empty($config['server'])) {
             $mongo = new \Mongo($config['server'], !empty($config['dboptions']) ? $config['dboptions'] : array());

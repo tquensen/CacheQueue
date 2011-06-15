@@ -6,7 +6,7 @@ class Client implements IClient
 {
     private $connection;
 
-    public function __construct(IConnection $connection)
+    public function __construct(IConnection $connection, $config = array())
     {
         $this->connection = $connection;
     }

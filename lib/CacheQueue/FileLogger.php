@@ -6,7 +6,7 @@ class FileLogger implements ILogger
 {
     private $file = null;
     
-    public function __construct($config)
+    public function __construct($config = array())
     {
         $this->file = $config['file'];
     }

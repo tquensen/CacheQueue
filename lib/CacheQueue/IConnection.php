@@ -3,7 +3,7 @@ namespace CacheQueue;
 
 interface IConnection
 {
-    public function __construct($config);
+    public function __construct($config = array());
     
     /**
      * get a cached entry

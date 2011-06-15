@@ -148,7 +148,12 @@ $config = array();
     $config['connection'] = array(
         'database' => 'cache_queue',
         'collection' => 'cache',
-        'safe' => false
+        'safe' => false,
+        'dboptions' => array(
+            //'timeout' => 2000,
+            //'username' => 'username',
+            //'password' => 'password'
+        )
     );
 
 
@@ -174,7 +179,7 @@ $config = array();
 
     //define the classes you want to use as connectin, client, server and logger
     $config['classes'] = array(
-        'connection' => '\\CacheQueue\\MongoConnection',
+        'connection' => '\\CacheQueue\\MongoConnection', //or '\\CacheQueue\\DummyConnection'
         'client' => '\\CacheQueue\\Client',
         'worker' => '\\CacheQueue\\Worker',
         'logger' => '\\CacheQueue\\FileLogger' // OR '\\CacheQueue\\GraylogLogger'
