@@ -31,84 +31,88 @@ if (empty($_SERVER['argv'][1])) {
     exit;
 }
 
-switch (strtolower($_SERVER['argv'][1])) {
-    case 'remove':
-        if (empty($_SERVER['argv'][2])) {
-            echo 'Error: a valid key or "all" required as first parameter!'."\n";
-            exit;
-        } else {
-            $key = trim($_SERVER['argv'][2]);
-        }
-        if (!empty($_SERVER['argv'][3])) {
-            switch (strtolower(trim($_SERVER['argv'][3]))) {
-                case 'force':
-                    $force = true;
-                    $persistent = null;
-                    break;
-                case 'persistent':
-                    $force = true;
-                    $persistent = true;
-                    break;
-                case 'nonpersistent':
-                    $force = true;
-                    $persistent = false;
-                    break;
-                default:
-                    echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
-                    exit;
+try {
+    switch (strtolower($_SERVER['argv'][1])) {
+        case 'remove':
+            if (empty($_SERVER['argv'][2])) {
+                echo 'Error: a valid key or "all" required as first parameter!'."\n";
+                exit;
+            } else {
+                $key = trim($_SERVER['argv'][2]);
             }
-        } else {
-            $force = false;
-            $persistent = null;
-        }
-        if (trim(strtolower($key)) == 'all') {
-            $status = $connection->removeAll($force, $persistent);
-            echo 'Removing all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
-        } else {
-            $status = $connection->remove($key, $force, $persistent);
-            echo 'Removing entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
-        }
-        break;
-    case 'outdate':
-        if (empty($_SERVER['argv'][2])) {
-            echo 'Error: a valid key or "all" required as first parameter!'."\n";
-            exit;
-        } else {
-            $key = trim($_SERVER['argv'][2]);
-        }
-        if (!empty($_SERVER['argv'][3])) {
-            switch (strtolower(trim($_SERVER['argv'][3]))) {
-                case 'force':
-                    $force = true;
-                    $persistent = null;
-                    break;
-                case 'persistent':
-                    $force = true;
-                    $persistent = true;
-                    break;
-                case 'nonpersistent':
-                    $force = true;
-                    $persistent = false;
-                    break;
-                default:
-                    echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
-                    exit;
+            if (!empty($_SERVER['argv'][3])) {
+                switch (strtolower(trim($_SERVER['argv'][3]))) {
+                    case 'force':
+                        $force = true;
+                        $persistent = null;
+                        break;
+                    case 'persistent':
+                        $force = true;
+                        $persistent = true;
+                        break;
+                    case 'nonpersistent':
+                        $force = true;
+                        $persistent = false;
+                        break;
+                    default:
+                        echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
+                        exit;
+                }
+            } else {
+                $force = false;
+                $persistent = null;
             }
-        } else {
-            $force = false;
-            $persistent = null;
-        }
-        if (trim(strtolower($key)) == 'all') {
-            $status = $connection->outdateAll($force, $persistent);
-            echo 'Outdating all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
-        } else {
-            $status = $connection->outdate($key, $force, $persistent);
-            echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
-        }
-        break;
-     default:
-        echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
-        break;
+            if (trim(strtolower($key)) == 'all') {
+                $status = $connection->removeAll($force, $persistent);
+                echo 'Removing all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
+            } else {
+                $status = $connection->remove($key, $force, $persistent);
+                echo 'Removing entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
+            }
+            break;
+        case 'outdate':
+            if (empty($_SERVER['argv'][2])) {
+                echo 'Error: a valid key or "all" required as first parameter!'."\n";
+                exit;
+            } else {
+                $key = trim($_SERVER['argv'][2]);
+            }
+            if (!empty($_SERVER['argv'][3])) {
+                switch (strtolower(trim($_SERVER['argv'][3]))) {
+                    case 'force':
+                        $force = true;
+                        $persistent = null;
+                        break;
+                    case 'persistent':
+                        $force = true;
+                        $persistent = true;
+                        break;
+                    case 'nonpersistent':
+                        $force = true;
+                        $persistent = false;
+                        break;
+                    default:
+                        echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
+                        exit;
+                }
+            } else {
+                $force = false;
+                $persistent = null;
+            }
+            if (trim(strtolower($key)) == 'all') {
+                $status = $connection->outdateAll($force, $persistent);
+                echo 'Outdating all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
+            } else {
+                $status = $connection->outdate($key, $force, $persistent);
+                echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
+            }
+            break;
+         default:
+            echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
+            break;
+    }
+} catch (Exception $e) {
+    echo 'Error: '.$e."\n";
 }
 
 function print_help()
