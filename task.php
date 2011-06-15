@@ -17,6 +17,7 @@ $loggerClass = $config['classes']['logger'];
 $connectionFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($connectionClass, '\\')).'.php';
 $loggerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($loggerClass, '\\')).'.php';
 
+require_once('CacheQueue/Exception.php');
 require_once('CacheQueue/ILogger.php');
 require_once('CacheQueue/IConnection.php');
 require_once($loggerFile);

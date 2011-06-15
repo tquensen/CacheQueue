@@ -18,6 +18,7 @@ $loggerClass = $config['classes']['logger'];
 $connectionFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($connectionClass, '\\')).'.php';
 $loggerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($loggerClass, '\\')).'.php';
 
+require_once('CacheQueue/Exception.php');
 require_once('CacheQueue/ILogger.php');
 require_once('CacheQueue/IConnection.php');
 require_once($loggerFile);
@@ -40,8 +41,13 @@ do {
 //        else {
 //            $logger->logNotice('Queue: no new tasks.');
 //        }
-    } catch (Exception $e) {
+    } catch (\CacheQueue\Exception $e) {
+        //log CacheQueue exceptions 
         $logger->logError('Queue: error '.(string)$e);
+    } catch (Exception $e) {
+        //handle exceptions
+        $logger->logError('Worker: Exception '.(string) $e);
+        exit;
     }
     sleep(1);
 } while(true);

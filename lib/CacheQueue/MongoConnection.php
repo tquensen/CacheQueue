@@ -109,8 +109,11 @@ class MongoConnection implements IConnection
                     array('upsert' => true, 'safe' => $this->safe)
                 );
             }
-        } catch (\Exception $e) {
-            return (bool) ($e->getCode() == 11000);
+        } catch (\MongoCursorException $e) {
+            if ($e->getCode() == 11000) {
+                return true;
+            }
+            throw $e;
         }
         
     }
@@ -156,27 +159,25 @@ class MongoConnection implements IConnection
                     array('upsert' => true, 'safe' => $this->safe)
                 );
             }
-        } catch (\Exception $e) {
-            return (bool) ($e->getCode() == 11000);
+        }  catch (\MongoCursorException $e) {
+            if ($e->getCode() == 11000) {
+                return true;
+            }
+            throw $e;
         }
-        
     }
 
     public function setData($key, $data)
     {
-        try {
-            return (bool) $this->collection->update(
-                    array(
-                        '_id' => $key
-                    ),
-                    array('$set' => array(
-                        'data' => $data
-                    )),
-                    array('safe' => $this->safe)
-                );
-        } catch (\Exception $e) {
-            return false;
-        }
+        return (bool) $this->collection->update(
+                array(
+                    '_id' => $key
+                ),
+                array('$set' => array(
+                    'data' => $data
+                )),
+                array('safe' => $this->safe)
+            );
     }
 
     public function getQueueCount()
@@ -186,158 +187,142 @@ class MongoConnection implements IConnection
     
     public function remove($key, $force = false, $persistent = null)
     {
-        try {
-            if (!$force) {
+        if (!$force) {
+            return (bool) $this->collection->remove(
+                    array(
+                        '_id' => $key,
+                        'fresh_until' => array('$lt' => new \MongoDate())
+                    ),
+                    array('safe' => $this->safe)
+                );
+        } else {
+            if ($persistent !== null) {
                 return (bool) $this->collection->remove(
-                        array(
-                            '_id' => $key,
-                            'fresh_until' => array('$lt' => new \MongoDate())
-                        ),
-                        array('safe' => $this->safe)
-                    );
+                    array(
+                        '_id' => $key,
+                        'persistent' => (bool) $persistent
+                    ),
+                    array('safe' => $this->safe)
+                );
             } else {
-                if ($persistent !== null) {
-                    return (bool) $this->collection->remove(
-                        array(
-                            '_id' => $key,
-                            'persistent' => (bool) $persistent
-                        ),
-                        array('safe' => $this->safe)
-                    );
-                } else {
-                    return (bool) $this->collection->remove(
-                        array(
-                            '_id' => $key
-                        ),
-                        array('safe' => $this->safe)
-                    );
-                }
-                
+                return (bool) $this->collection->remove(
+                    array(
+                        '_id' => $key
+                    ),
+                    array('safe' => $this->safe)
+                );
             }
-        } catch (\Exception $e) {
-            return false;
+
         }
     }
     
     public function removeAll($force = false, $persistent = null)
     {
-        try {
-            if (!$force) {
+        if (!$force) {
+            return (bool) $this->collection->remove(
+                    array(
+                        'fresh_until' => array('$lt' => new \MongoDate())
+                    ),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+        } else {
+            if ($persistent !== null) {
                 return (bool) $this->collection->remove(
-                        array(
-                            'fresh_until' => array('$lt' => new \MongoDate())
-                        ),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
+                    array(
+                        'persistent' => (bool) $persistent
+                    ),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
             } else {
-                if ($persistent !== null) {
-                    return (bool) $this->collection->remove(
-                        array(
-                            'persistent' => (bool) $persistent
-                        ),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
-                } else {
-                    return (bool) $this->collection->remove(
-                        array(),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
-                }
-                
+                return (bool) $this->collection->remove(
+                    array(),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
             }
-        } catch (\Exception $e) {
-            return false;
+
         }
     }
     
     public function outdate($key, $force = false, $persistent = null)
     {
-        try {
-            if (!$force) {
+        if (!$force) {
+            return (bool) $this->collection->update(
+                    array(
+                        '_id' => $key,
+                        'fresh_until' => array('$gt' => new \MongoDate()),
+                        'persistent' => false
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1)
+                    )),
+                    array('safe' => $this->safe)
+                );
+        } else {
+            if ($persistent !== null) {
                 return (bool) $this->collection->update(
-                        array(
-                            '_id' => $key,
-                            'fresh_until' => array('$gt' => new \MongoDate()),
-                            'persistent' => false
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1)
-                        )),
-                        array('safe' => $this->safe)
-                    );
+                    array(
+                        '_id' => $key,
+                        'persistent' => (bool) $persistent
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe)
+                );
             } else {
-                if ($persistent !== null) {
-                    return (bool) $this->collection->update(
-                        array(
-                            '_id' => $key,
-                            'persistent' => (bool) $persistent
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1),
-                            'persistent' => false
-                        )),
-                        array('safe' => $this->safe)
-                    );
-                } else {
-                    return (bool) $this->collection->update(
-                        array(
-                            '_id' => $key,
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1),
-                            'persistent' => false
-                        )),
-                        array('safe' => $this->safe)
-                    );
-                }
-                
+                return (bool) $this->collection->update(
+                    array(
+                        '_id' => $key,
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe)
+                );
             }
-        } catch (\Exception $e) {
-            return false;
+
         }
     }
     
     public function outdateAll($force = false, $persistent = null)
     {
-        try {
-            if (!$force) {
+        if (!$force) {
+            return (bool) $this->collection->update(
+                    array(
+                        'fresh_until' => array('$gt' => new \MongoDate()),
+                        'persistent' => false
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1)
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+        } else {
+            if ($persistent !== null) {
                 return (bool) $this->collection->update(
-                        array(
-                            'fresh_until' => array('$gt' => new \MongoDate()),
-                            'persistent' => false
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1)
-                        )),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
+                    array(
+                        'persistent' => (bool) $persistent
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
             } else {
-                if ($persistent !== null) {
-                    return (bool) $this->collection->update(
-                        array(
-                            'persistent' => (bool) $persistent
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1),
-                            'persistent' => false
-                        )),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
-                } else {
-                    return (bool) $this->collection->update(
-                        array(
-                        ),
-                        array('$set' => array(
-                            'fresh_until' => new \MongoDate(time() - 1),
-                            'persistent' => false
-                        )),
-                        array('safe' => $this->safe, 'multiple' => true)
-                    );
-                }
-                
+                return (bool) $this->collection->update(
+                    array(
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
             }
-        } catch (\Exception $e) {
-            return false;
+
         }
     }
     
