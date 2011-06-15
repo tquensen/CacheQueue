@@ -24,6 +24,7 @@ require_once($workerFile);
 $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
 $worker = new $workerClass($connection, $config['tasks']);
+$worker->setLogger($logger);
 
 //log a message after proceeding X tasks without pause
 $noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break

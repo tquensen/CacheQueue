@@ -61,6 +61,44 @@ interface IClient
      * @return mixed the cached data or false if not found
      */
     public function getOrQueue($key, $task, $params, $freshFor, $force = false);
+    
+    /**
+     * removes an entry from cache
+     * 
+     * @param string $key the key of the entry to remove from cache
+     * @param bool $force if false (default), the entry will only be removed if it is outdated and non persistent 
+     * @param type $persistent only used if force=true. if true, the entry will be removed only if it is persistent, if false only if it is non-persistent, if null (default) if will be removed regardless of the persistent state
+     * @return bool if the request was successful 
+     */
+    public function remove($key, $force = false, $persistent = null);
+    
+    /**
+     * removes all entries from cache
+     * 
+     * @param bool $force if false (default), only fresh, non persistent entries will be removed 
+     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @return bool if the request was successful 
+     */
+    public function removeAll($force = false, $persistent = null);
+    
+    /**
+     * outdates an entry in cache (sets fresh_until to the past)
+     * 
+     * @param string $key the key of the entry to outdate
+     * @param bool $force if false (default), the entry will only get outdated if it is fresh and non persistent 
+     * @param bool|null $persistent only used if force=true. if true, the entry gets outdated only if it is persistent, if false only if it is non-persistent, if null (default) if gets outdated regardless of the persistent state
+     * @return bool if the request was successful 
+     */
+    public function outdate($key, $force = false, $persistent = null);
+    
+    /**
+     * outdates all entries in cache (sets fresh_until to the past)
+     * 
+     * @param bool $force if false (default), only fresh, non persistent entries will be outdated 
+     * @param bool|null $persistent only used if force=true. if true, only persistent entries get outdated, if false only non-persistent entries get outdated, if null(default) both persistent and non persistent entries get outdated
+     * @return bool if the request was successful 
+     */
+    public function outdateAll($force = false, $persistent = null);
 
 }
 

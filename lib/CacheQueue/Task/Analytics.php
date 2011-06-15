@@ -27,7 +27,7 @@ class Analytics
         return $this->client;
     }
     
-    public function getPageviews($params, $config, $job)
+    public function getPageviews($params, $config, $job, $worker)
     {
         if (empty($config['consumerKey']) || empty($config['consumerSecret'])) {
             throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
@@ -58,6 +58,10 @@ class Analytics
         foreach($feed as $entry) {
             $count = (int)$entry->metric->getDOM()->getAttribute('value');
             break;
+        }
+        
+        if ($logger = $worker->getLogger()) {
+            $logger->logMessage('Analytics: URL='.$reportURL.' / COUNT='.$count);
         }
 
         return (int) $count;

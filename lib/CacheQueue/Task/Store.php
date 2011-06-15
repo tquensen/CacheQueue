@@ -11,7 +11,7 @@ namespace CacheQueue\Task;
  */
 class Store
 {
-    public function execute($params, $config, $job)
+    public function execute($params, $config, $job, $worker)
     {
         return $params;
     }

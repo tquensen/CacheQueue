@@ -6,6 +6,8 @@ class Worker implements IWorker
     private $connection;
     private $tasks = array();
     
+    private $logger = null;
+    
     public function __construct(IConnection $connection, $tasks)
     {
         $this->connection = $connection;
@@ -47,7 +49,7 @@ class Worker implements IWorker
 //            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
 //        }
 
-        $result = $task->$taskMethod($params, $taskConfig, $job);
+        $result = $task->$taskMethod($params, $taskConfig, $job, $this);
 
         if ($result !== null) {
             $this->setData($job['key'], $result);
@@ -64,6 +66,16 @@ class Worker implements IWorker
     public function setData($key, $data)
     {
         return $this->connection->setData($key, $data);
+    }
+    
+    public function setLogger(ILogger $logger)
+    {
+         $this->logger = $logger;
+    }
+    
+    public function getLogger()
+    {
+        return $this->logger;
     }
 
 }

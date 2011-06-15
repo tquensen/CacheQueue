@@ -3,7 +3,7 @@ namespace CacheQueue\Task;
 
 class Social
 {
-    public function getRetweets($params, $config, $job)
+    public function getRetweets($params, $config, $job, $worker)
     {
         // set timeout
 		$context = stream_context_create(array('http' => array('timeout' => 15)));
@@ -16,7 +16,7 @@ class Social
 		}
     }
     
-    public function getLikes($params, $config, $job)
+    public function getLikes($params, $config, $job, $worker)
     {
         // set timeout
 		$context = stream_context_create(array('http' => array('timeout' => 15)));
@@ -30,7 +30,7 @@ class Social
 		}
     }
     
-    public function getPlusOnes($params, $config, $job)
+    public function getPlusOnes($params, $config, $job, $worker)
     {
         // set context
 		$context = stream_context_create(array(

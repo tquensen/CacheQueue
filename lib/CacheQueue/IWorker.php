@@ -28,4 +28,18 @@ interface IWorker
      * @return bool if save was successful 
      */
     public function setData($key, $data);
+    
+    /**
+     * sets a logger which can be accessed by the tasks
+     * 
+     * @param ILogger $logger an ILogger instance
+     */
+    public function setLogger(ILogger $logger);
+    
+    /**
+     * gets the logger or null if no logger was set
+     * 
+     * @return ILogger the logger instance
+     */
+    public function getLogger();
 }
