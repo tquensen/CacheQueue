@@ -46,6 +46,18 @@ $config = array();
     $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes');
 
     /*
+     * get twitter timeline
+     * 
+     * params:
+     * an array with
+     *   'account' => 'the twitter account name'
+     *   'limit' => 'max number of results (optional, default 30)'
+     *   'filter' => 'a regular expression to fiter the tweets for (optional, default none)' //example: "/#blog/i"
+     *   'update' => 'true to keep old entries if not enough new data, false to completely overwrite old data. (optional, default false)'
+     */
+    $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline');
+    
+    /*
      * get analytics pageviews of a given url
      * you need a registered oAuth application on the server/task side,
      * and an Analytics Account, a token and a token secret on the client side

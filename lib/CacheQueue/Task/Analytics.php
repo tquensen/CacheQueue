@@ -101,8 +101,6 @@ class Analytics
             $title = (string)$entry->dimension->getDOM()->getAttribute('value');
             $count = (int)$entry->metric->getDOM()->getAttribute('value');
 
-            preg_match('/.*-([0-9]+)\/$/i', $title, $matches);
-
             $topUrlsTmp[$title] = $count;
         }
         
