@@ -7,6 +7,7 @@ class GraylogLogger implements ILogger
     private $graylogHostname = null;
     private $graylogPort = null;
     private $host = '';
+    private $showPid = false;
     
     public function __construct($config = array())
     {
@@ -15,6 +16,7 @@ class GraylogLogger implements ILogger
         $this->graylogPort = $config['graylogPort'];
         $this->host = $config['host'];
         $this->facility = !empty($config['facility']) ? $config['facility'] : 'CacheQueue';
+        $this->showPid = !empty($config['showPid']);
     }
 
     public function logError($text)
@@ -36,7 +38,7 @@ class GraylogLogger implements ILogger
     {
         $gelf = new \GELFMessage($this->graylogHostname, $this->graylogPort);
 
-        $gelf->setShortMessage($message);
+        $gelf->setShortMessage(($this->showPid ? 'PID '.getmypid().' | ' : '').$message);
         $gelf->setHost($this->host);
         $gelf->setTimestamp(time());
         $gelf->setLevel($level);

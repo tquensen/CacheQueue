@@ -173,7 +173,8 @@ $config = array();
     
     //FileLogger
     $config['logger'] = array(
-        'file' => dirname(__FILE__).'/log.txt'
+        'file' => dirname(__FILE__).'/log.txt',
+        'showPid' => false //display the process ID in the logfile - useful when multiple workers are running
     );
 
     //GraylogLogger
@@ -182,7 +183,8 @@ $config = array();
         'gelfFile' => 'GELF/gelf.php',
         'graylogHostname' => 'graylog2.example.com',
         'graylogPort' => 12201,
-        'host' => 'CacheQueueServer'
+        'host' => 'CacheQueueServer',
+        'showPid' => false //display the process ID in the logfile - useful when multiple workers are running
     );
      */
 
