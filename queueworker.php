@@ -58,7 +58,8 @@ try {
 
         if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
             $end = microtime(true);
-            $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($end-$start, 4,'.','')).'s so far...');
+            $count = $connection->getQueueCount();
+            $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($end-$start, 4,'.','')).'s so far...');
         }
     } while (true);
     if ($processed) {

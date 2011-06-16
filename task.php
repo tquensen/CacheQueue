@@ -132,5 +132,6 @@ Available Tasks:
                  if "force", outdates any entries regardless of freshness or persistent state
                  if "persistent", outdates only matching persistent entries
                  if "nonpersistent", outdates only non persistent entries
+                 
 EOF;
 }

@@ -62,7 +62,7 @@ class Social
         }
         
         $update = empty($params['update']) ? false : true;
-        $filter = empty($params['fiter']) ? false : $params['fiter'];
+        $filter = empty($params['filter']) ? false : $params['filter'];
         
         $url = 'http://twitter.com/statuses/user_timeline/'.trim($params['account']).'.json?count=' . $limit;
         
