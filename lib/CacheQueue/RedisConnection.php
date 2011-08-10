@@ -117,9 +117,11 @@ class RedisConnection implements IConnection
             });
 
             if (empty($result[1])) {
+                $this->predis->unwatch();
                 return false;
             }
             if ($result[1][1] || $result[1][0] > time()) {
+                $this->predis->unwatch();
                 return true;
             }
         
@@ -174,9 +176,11 @@ class RedisConnection implements IConnection
             });
 
             if (empty($result[1])) {
+                $this->predis->unwatch();
                 return false;
             }
             if ($result[1][1] || $result[1][3] || $result[1][0] > $now || $result[1][2] > $now) {
+                $this->predis->unwatch();
                 return true;
             }
 
@@ -214,9 +218,11 @@ class RedisConnection implements IConnection
             });
 
             if (empty($result[1])) {
+                $this->predis->unwatch();
                 return false;
             }
             if ($result[1][1] || $result[1][0] > time()) {
+                $this->predis->unwatch();
                 return true;
             }
         
@@ -247,25 +253,27 @@ class RedisConnection implements IConnection
                 });
                 
                 if (empty($result[1])) {
+                    $this->predis->unwatch();
                     return false;
                 }
                 if ($result[1][1] != (int) $persistent) {
+                    $this->predis->unwatch();
                     return true;
                 }
 
                 $result = $this->predis->pipeline(function($pipe) use ($key) {
-                $pipe->multi();
-                $pipe->del(array(
-                       $key.':data',
-                       $key.':task',
-                       $key.':params',
-                       $key.':fresh_until',
-                       $key.':persistent',
-                       $key.':queue_fresh_until',
-                       $key.':queue_persistent'
-                ));
-                $pipe->srem('_queue', $key);
-                $pipe->exec();
+                    $pipe->multi();
+                    $pipe->del(array(
+                           $key.':data',
+                           $key.':task',
+                           $key.':params',
+                           $key.':fresh_until',
+                           $key.':persistent',
+                           $key.':queue_fresh_until',
+                           $key.':queue_persistent'
+                    ));
+                    $pipe->srem('_queue', $key);
+                    $pipe->exec();
                 });
 
                 return $result && !empty($result[3]);
@@ -390,9 +398,11 @@ class RedisConnection implements IConnection
             });
 
             if (empty($result[1])) {
+                $this->predis->unwatch();
                 return false;
             }
             if ($result[1][1] || $result[1][0] > time()) {
+                $this->predis->unwatch();
                 return true;
             }
         
@@ -417,9 +427,11 @@ class RedisConnection implements IConnection
                 });
                 
                 if (empty($result[1])) {
+                    $this->predis->unwatch();
                     return false;
                 }
                 if ($result[1][1] != (int) $persistent) {
+                    $this->predis->unwatch();
                     return true;
                 }
 
