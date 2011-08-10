@@ -11,16 +11,18 @@ class Client implements IClient
         $this->connection = $connection;
     }
 
-    public function get($key, $onlyValue = true)
+    public function get($key, $onlyFresh = false)
     {
         $result = $this->connection->get($key);
-        if ($onlyValue === false) {
-            return $result;
-        }
         if (!$result || empty($result['data'])) {
             return false;
         }
-        return $result['data'];
+        return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
+    }
+    
+    public function getEntry($key)
+    {
+        return $this->connection->get($key);
     }
 
     public function set($key, $data, $freshFor, $force = false)
@@ -47,7 +49,7 @@ class Client implements IClient
     public function getOrQueue($key, $task, $params, $freshFor, $force = false)
     {
         $result = $this->connection->get($key);
-        if (!$result || !$result['is_fresh'] || $force) {
+        if (!$result || (!$result['is_fresh'] && !$result['queue_is_fresh']) || $force) {
             $this->queue($key, $task, $params, $freshFor, $force);
         }
         return empty($result['data']) ? false : $result['data'];

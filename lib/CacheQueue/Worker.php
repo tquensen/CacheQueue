@@ -22,6 +22,7 @@ class Worker implements IWorker
         
         $task = $job['task'];
         $params = $job['params'];
+        $freshUntil = $job['persistent'] ? true : $job['fresh_until'];
 
         if (empty($this->tasks[$task])) {
             throw new Exception('invalid task '.$task.'.');
@@ -52,7 +53,7 @@ class Worker implements IWorker
         $result = $task->$taskMethod($params, $taskConfig, $job, $this);
 
         if ($result !== null) {
-            $this->setData($job['key'], $result);
+            $this->connection->set($job['key'], $result, $freshUntil, true);
         }
 
         return true;
@@ -61,11 +62,6 @@ class Worker implements IWorker
     public function getJob()
     {
         return $this->connection->getJob();
-    }
-
-    public function setData($key, $data)
-    {
-        return $this->connection->setData($key, $data);
     }
     
     public function setLogger(ILogger $logger)

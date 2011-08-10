@@ -7,13 +7,21 @@ interface IClient
     public function __construct(IConnection $connection, $config = array());
 
     /**
+     * get a cached entries value
+     * 
+     * @param string $key the key to get
+     * @param bool $onlyFresh true to return the value only if it is fresh, false (default) to return also outdated values
+     * @return mixed the value or false if not found 
+     */
+    public function get($key, $onlyFresh = false);
+    
+    /**
      * get a cached entry
      * 
      * @param string $key the key to get
-     * @param bool $onlyValue true to return only the value, false to return the result array
-     * @return mixed the value or the result array (depending on $onlyValue) or false if not found 
+     * @return mixed the result array or false if not found 
      */
-    public function get($key, $onlyValue = true);
+    public function getEntry($key);
 
     /**
      * save cache data

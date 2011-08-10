@@ -25,6 +25,16 @@ $config = array();
     $config['tasks']['store'] = '\\CacheQueue\\Task\\Store';
     
     /*
+     * reads and stores the content of a url
+     * params:
+     * an array of
+     *   'url' => 'the absolute URL (or anything which is readable by fopen) to get the content from (see http://www.php.net/manual/en/wrappers.php)'
+     *   'context' => '(optional), an array of context options to use or false/null to nut use a context (see http://www.php.net/manual/en/function.stream-context-create.php)'
+     *   'format' => '(optional), only valid option is json - when set, the response is processed by json_decode before saved'
+     */
+    $config['tasks']['loadurl'] = array('\\CacheQueue\\Task\\Misc', 'loadUrl');
+
+    /*
      * get the retweets of a url
      * params:
      * the absolute URL to get twitter retweets for as string
@@ -76,10 +86,12 @@ $config = array();
      * 
      * params:
      * an array with
-     *   'url' => 'the url to get pageviews for'
+     *   'pagePath' => 'the absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
+     *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
      *   'token' => 'the oAuth token'
      *   'tokenSecret' => 'the oAuth token secret',
      *   'profileId' => 'the Google Analytics profile ID'
+     *   'operator' => 'the filter operator (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
      * 
      * options:
      *   'consumerKey' => 'the consumer key'
@@ -109,7 +121,7 @@ $config = array();
      * 
      * params:
      * an array with
-     *   'url' => 'only consider urls beginning with this prefix',
+     *   'pathPrefix' => 'only consider urls beginning with this prefix. optional, default is "/"',
      *   'count' => 'limit results to this number (overwrites count option)',
      *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
      *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
@@ -126,6 +138,23 @@ $config = array();
         'consumerKey' => 'your.key',
         'consumerSecret' => 'YourConsumerSecret',
         'count' => 20
+    ));
+    
+    /*
+     * run a Symfony 1.x task
+     * 
+     * the key will save the status code of the Symfony task.
+     * 
+     * params:
+     *   the Symfony cli command as string (Example: "cc", "doctrine:build --all --and-load")
+     * 
+     * options:
+     *   'symfonyBaseDir' => 'full path to your symfony base'
+     *     (usually where your symfony cli file is located, 
+     *      example: "/var/www/mySymfonyProject")
+     */
+    $config['tasks']['symfony'] = array('\\CacheQueue\\Task\\Symfony', 'runTask', array(
+        'symfonyBaseDir' => "/var/www/mySymfonyProject"
     ));
     
     /*

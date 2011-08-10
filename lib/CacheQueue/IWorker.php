@@ -21,15 +21,6 @@ interface IWorker
     public function getJob();
     
     /**
-     * updates the data for a given cache entry
-     * 
-     * @param string $key the key to save the data for
-     * @param mixed $data the data
-     * @return bool if save was successful 
-     */
-    public function setData($key, $data);
-    
-    /**
      * sets the connection class
      * 
      * @param IConnection $connection an IConnection instance

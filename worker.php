@@ -32,15 +32,21 @@ $connection = new $connectionClass($config['connection']);
 $worker = new $workerClass($connection, $config['tasks']);
 $worker->setLogger($logger);
 
+//log a "finished" message only after X seconds
+$noticeAfterMoreThanSeconds = 30;
+
 //log a message after proceeding X tasks without pause
 $noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break
 
-do {
+$start = microtime(true);
+$time = 0;
+$processed = 0;
+$errors = 0;
+do {   
     try {
-        $start = microtime(true);
-        $processed = 0;
-        $errors = 0;
-        do {
+        
+        do {          
+            $ts = microtime(true);
             $status = null;
             try {
                 $status = $worker->work(); 
@@ -56,16 +62,22 @@ do {
             }
 
             $processed++;
-
+            $time += microtime(true) - $ts;
             if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
                 $end = microtime(true);
                 $count = $connection->getQueueCount();
-                $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($end-$start, 4,'.','')).'s so far...');
-            }
-        } while (true);
+                $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($time, 4,'.','')).'s so far...');
+            }             
+        } while (true);       
         if ($processed) {
             $end = microtime(true);
-            $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($end-$start, 4,'.','')).'s - ready for new tasks');
+            if (!$noticeAfterMoreThanSeconds || ($end - $start > $noticeAfterMoreThanSeconds)) {
+                $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s - ready for new tasks');
+                $start = microtime(true);
+                $processed = 0;
+                $errors = 0;
+                $time = 0;
+            }
         }
     } catch (Exception $e) {
         //handle exceptions

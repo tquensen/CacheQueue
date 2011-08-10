@@ -33,20 +33,26 @@ class Analytics
             throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
         }
         
-        if (empty($params['url']) || empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
-            throw new \Exception('parameters parameters url, profileId, token and tokenSecret are required!');
+        if (empty($params['pagePath']) || empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
+            throw new \Exception('parameters pagePath, profileId, token and tokenSecret are required!');
         }
         
-        $url = str_replace(array('https://', 'http://'), '', $params['url']);
-        $tmp = explode('/', $url, 2);
-        $path = '/'. (isset($tmp[1]) ? $tmp[1] : '');
+//        $url = str_replace(array('https://', 'http://'), '', $params['pagePath']);
+//        $tmp = explode('/', $url, 2);
+//        $path = '/'. (isset($tmp[1]) ? $tmp[1] : '');
+        
+        
+        $path = $params['pagePath'];
+        $hostStr = !empty($params['hostname']) ? 'ga:hostname%3D%3D'.$params['hostname'].';' : '';
+        
+        $op = !empty($params['operator']) ? $params['operator'] : '==';
         
         $client = $this->initClient($config['consumerKey'], $config['consumerSecret'], $params['token'], $params['tokenSecret']);
         
         $dateFrom = '2005-01-01';
         $dateTo = date('Y-m-d');
         
-        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results=1&filters=ga:pagePath%3D%3D'.urlencode($path);
+        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results=50&filters='.$hostStr.'ga:pagePath'.urlencode($op.$path);
 
         $count = 0;
 
@@ -56,8 +62,7 @@ class Analytics
         \Zend_Feed::lookupNamespace('default');
         $feed = new \Zend_Feed_Atom(null, $xml);
         foreach($feed as $entry) {
-            $count = (int)$entry->metric->getDOM()->getAttribute('value');
-            break;
+            $count += (int)$entry->metric->getDOM()->getAttribute('value');
         }
         
         if ($logger = $worker->getLogger()) {
@@ -73,8 +78,12 @@ class Analytics
             throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
         }
         
-        if (empty($params['url']) || empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
-            throw new \Exception('parameters parameters url, profileId, token and tokenSecret are required!');
+        if (empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
+            throw new \Exception('parameters, profileId, token and tokenSecret are required!');
+        }
+        
+        if (empty($params['pathPrefix'])) {
+            $params['pathPrefix'] = '/';
         }
         
         if (!empty($params['count'])) {
@@ -88,7 +97,7 @@ class Analytics
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
         
-        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results='.$limit.'&filters=ga:pagePath%3D~%5E'.urlencode($url);
+        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results='.$limit.'&filters=ga:pagePath%3D~%5E'.urlencode($params['pathPrefix']);
 
         $results = $client->getFeed($reportURL);
         $xml = $results->getXML();

@@ -26,6 +26,15 @@ class MongoConnection implements IConnection
         
         $this->safe = !empty($config['safe']) ? true : false;
     }
+    
+    public function setup()
+    {
+        $this->collection->ensureIndex(array('queued' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('fresh_until' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('queue_fresh_until' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('persistent' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('queue_persistent' => 1), array('safe' => true));
+    }
 
     public function get($key)
     {
@@ -40,9 +49,12 @@ class MongoConnection implements IConnection
         $return['fresh_until'] = !empty($result['fresh_until']) ? $result['fresh_until']->sec : 0;
         $return['persistent'] = !empty($result['persistent']);
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
+
+        $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until'] > time());
+
         //$return['task'] = !empty($result['task']) ? $result['task'] : null;
         //$return['params'] = !empty($result['params']) ? $result['params'] : null;
-        $return['data'] = !empty($result['data']) ? $result['data'] : null;
+        $return['data'] = isset($result['data']) ? $result['data'] : false;
 
         return $return;
     }
@@ -62,9 +74,8 @@ class MongoConnection implements IConnection
         $return = array();
         
         $return['key'] = $result['value']['_id'];
-        //$return['fresh_until'] = !empty($result['value']['fresh_until']) ? $result['value']['fresh_until']->sec : 0;
-        //$return['persistent'] = !empty($result['persistent']);
-        //$return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
+        $return['fresh_until'] = !empty($result['value']['queue_fresh_until']) ? $result['value']['queue_fresh_until']->sec : 0;
+        $return['persistent'] = !empty($result['queue_persistent']);
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
         $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
@@ -87,11 +98,12 @@ class MongoConnection implements IConnection
                     array(
                         '_id' => $key
                     ),
-                    array(
+                    array('$set' => array(
+                        '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data
-                    ),
+                    )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
             } else {
@@ -101,11 +113,12 @@ class MongoConnection implements IConnection
                         'fresh_until' => array('$lt' => new \MongoDate()),
                         'persistent' => false
                     ),
-                    array(
+                    array('$set' => array(
+                        '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data
-                    ),
+                    )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
             }
@@ -121,7 +134,7 @@ class MongoConnection implements IConnection
     public function queue($key, $task, $params, $freshFor, $force = false)
     {
         if ($freshFor === true) {
-            $freshUntil = new \MongoDate(0);
+            $freshUntil = true;
             $persistent = true;
         } else {
             $freshUntil = new \MongoDate(time() + $freshFor);
@@ -134,8 +147,8 @@ class MongoConnection implements IConnection
                         '_id' => $key
                     ),
                     array('$set' => array(
-                        'fresh_until' => $freshUntil,
-                        'persistent' => $persistent,
+                        'queue_fresh_until' => $freshUntil,
+                        'queue_persistent' => $persistent,
                         'queued' => true,
                         'task' => $task,
                         'params' => $params
@@ -147,11 +160,13 @@ class MongoConnection implements IConnection
                     array(
                         '_id' => $key,
                         'fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false
+                        'queue_fresh_until' => array('$lt' => new \MongoDate()),
+                        'persistent' => false,
+                        'queue_persistent' => false
                     ),
                     array('$set' => array(
-                        'fresh_until' => $freshUntil,
-                        'persistent' => $persistent,
+                        'queue_fresh_until' => $freshUntil,
+                        'queue_persistent' => $persistent,
                         'queued' => true,
                         'task' => $task,
                         'params' => $params
@@ -165,19 +180,6 @@ class MongoConnection implements IConnection
             }
             throw $e;
         }
-    }
-
-    public function setData($key, $data)
-    {
-        return (bool) $this->collection->update(
-                array(
-                    '_id' => $key
-                ),
-                array('$set' => array(
-                    'data' => $data
-                )),
-                array('safe' => $this->safe)
-            );
     }
 
     public function getQueueCount()
