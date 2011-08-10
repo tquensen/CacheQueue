@@ -13,7 +13,7 @@ $config = array();
      *      OR 'taskname' => array('Classname', 'method', array('some' => 'additional', 'config' => 'parameters)) 
      *      OR 'taskname' => 'Classname' to use the method 'execute' and no config parameters
      * 
-     * the defined method is called with the parameters $params, $config and $job
+     * the defined method is called with the parameters $params, $config, $job and $worker
      */
     $config['tasks'] = array();
     
@@ -74,7 +74,7 @@ $config = array();
      * 
      * this task requires the Zend Framework in your include_path!
      * 
-     * register your oAuth registration here to get a consumerKey/Secret
+     * register your oAuth application here to get a consumerKey/Secret
      * https://www.google.com/accounts/ManageDomains
      * 
      * You can retrieve an oauthToken and tokenSecret here:
@@ -86,7 +86,7 @@ $config = array();
      * 
      * params:
      * an array with
-     *   'pagePath' => 'the absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
+     *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
      *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
      *   'token' => 'the oAuth token'
      *   'tokenSecret' => 'the oAuth token secret',
