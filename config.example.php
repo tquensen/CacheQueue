@@ -184,9 +184,12 @@ $config = array();
   
     //settings for mongodb
     /*
-     * your cache collection should have indexes 'queued' => 1, 'fresh_until' => 1 and 'persistent' => 1
-     */
+     * your cache collection should have indixes 'queued' => 1, 'fresh_until' => 1, 'persistent' => 1, 'queue_fresh_until' => 1 and 'queue_persistent' => 1
+     * run \CacheQueue\MongoConnection->setup() to generate these indices or add them manually
+     */  
+    
     $config['connection'] = array(
+        //'server' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://localhost:27017' (see http://de3.php.net/manual/en/mongo.construct.php)
         'database' => 'cache_queue',
         'collection' => 'cache',
         'safe' => false,
@@ -196,7 +199,24 @@ $config = array();
             //'password' => 'password'
         )
     );
-
+    
+    
+    //settings for redis / predis
+    /*
+     * for parameters, see see https://github.com/nrk/predis/wiki/Quick-tour
+     */
+    /*
+    $config['connection'] = array(
+        'predisFile' => 'Predis/Predis.php', //this file will be included to load the Predis classes. you can remove this if you use an autoloader
+        'parameters' => array(
+            'host' => '10.211.55.4', 
+            'port' => 6379, 
+        ),
+        'options' => array(
+            'prefix' => 'cachequeue'
+        )
+    );
+     */
 
 // --- LOGGER SETTINGS --- //  
     
@@ -209,7 +229,7 @@ $config = array();
     //GraylogLogger
     /*
     $config['logger'] = array(
-        'gelfFile' => 'GELF/gelf.php',
+        'gelfFile' => 'GELF/gelf.php', //this file will be included to load the gelf classes. you can remove this if you use an autoloader
         'graylogHostname' => 'graylog2.example.com',
         'graylogPort' => 12201,
         'host' => 'CacheQueueServer',
@@ -222,7 +242,7 @@ $config = array();
 
     //define the classes you want to use as connectin, client, server and logger
     $config['classes'] = array(
-        'connection' => '\\CacheQueue\\MongoConnection', //or '\\CacheQueue\\DummyConnection'
+        'connection' => '\\CacheQueue\\MongoConnection', //or '\\CacheQueue\\RedisConnection' or '\\CacheQueue\\DummyConnection'
         'client' => '\\CacheQueue\\Client',
         'worker' => '\\CacheQueue\\Worker',
         'logger' => '\\CacheQueue\\FileLogger' // OR '\\CacheQueue\\GraylogLogger'

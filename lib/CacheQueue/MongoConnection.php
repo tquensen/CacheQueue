@@ -13,11 +13,8 @@ class MongoConnection implements IConnection
     
     public function __construct($config = array())
     {
-        if (!empty($config['server'])) {
-            $mongo = new \Mongo($config['server'], !empty($config['dboptions']) ? $config['dboptions'] : array());
-        } else {
-            $mongo = new \Mongo();
-        }
+        $mongo = new \Mongo(!empty($config['server']) ? $config['server'] : 'mongodb://localhost:27017', !empty($config['dboptions']) ? $config['dboptions'] : array());
+
         $this->dbName = !empty($config['database']) ? $config['database'] : 'cachequeue';
         $this->collectionName = !empty($config['collection']) ? $config['collection'] : 'cache';
         
@@ -50,7 +47,7 @@ class MongoConnection implements IConnection
         $return['persistent'] = !empty($result['persistent']);
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
 
-        $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until'] > time());
+        $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
 
         //$return['task'] = !empty($result['task']) ? $result['task'] : null;
         //$return['params'] = !empty($result['params']) ? $result['params'] : null;
@@ -134,7 +131,7 @@ class MongoConnection implements IConnection
     public function queue($key, $task, $params, $freshFor, $force = false)
     {
         if ($freshFor === true) {
-            $freshUntil = true;
+            $freshUntil = new \MongoDate(0);
             $persistent = true;
         } else {
             $freshUntil = new \MongoDate(time() + $freshFor);
@@ -193,7 +190,8 @@ class MongoConnection implements IConnection
             return (bool) $this->collection->remove(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array('$lt' => new \MongoDate())
+                        'fresh_until' => array('$lt' => new \MongoDate()),
+                        'persistent' => false
                     ),
                     array('safe' => $this->safe)
                 );
@@ -223,7 +221,8 @@ class MongoConnection implements IConnection
         if (!$force) {
             return (bool) $this->collection->remove(
                     array(
-                        'fresh_until' => array('$lt' => new \MongoDate())
+                        'fresh_until' => array('$lt' => new \MongoDate()),
+                        'persistent' => false
                     ),
                     array('safe' => $this->safe, 'multiple' => true)
                 );

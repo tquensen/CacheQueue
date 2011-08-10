@@ -36,11 +36,6 @@ class DummyConnection implements IConnection
         return false;
     }
 
-    public function setData($key, $data)
-    {
-        return false;
-    }
-
     public function getQueueCount()
     {
         return 0;

@@ -33,6 +33,7 @@ function getCacheQueueClient() {
     require_once('CacheQueue/IClient.php');
     require_once($connectionFile);
     require_once($clientFile);
+    
     */
 
     $connection = new $connectionClass($config['connection']);
@@ -55,7 +56,7 @@ function simpleGetCacheQueueClient() {
     require_once($filePath.'/Exception.php');
     require_once($filePath.'/IConnection.php');
     require_once($filePath.'/IClient.php');
-    require_once($filePath.'/MongoConnection.php'); // or require_once($filePath.'/DummyConnection.php');
+    require_once($filePath.'/MongoConnection.php'); // or require_once($filePath.'/RedisConnection.php') or require_once($filePath.'/DummyConnection.php');
     require_once($filePath.'/Client.php');   
 
     //define your connection settings manually. 
