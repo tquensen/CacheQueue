@@ -1,7 +1,7 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Logger;
 
-interface ILogger
+interface LoggerInterface
 {
     public function __construct($config = array());
     

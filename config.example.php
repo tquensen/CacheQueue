@@ -22,7 +22,7 @@ $config = array();
      * params:
      * any string, number, bool or array to store under the given key
      */
-    $config['tasks']['store'] = '\\CacheQueue\\Task\\Store';
+    $config['tasks']['store'] = array('\\CacheQueue\\Task\\Misc', 'store');
     
     /*
      * reads and stores the content of a url
@@ -242,8 +242,8 @@ $config = array();
 
     //define the classes you want to use as connectin, client, server and logger
     $config['classes'] = array(
-        'connection' => '\\CacheQueue\\MongoConnection', //or '\\CacheQueue\\RedisConnection' or '\\CacheQueue\\DummyConnection'
-        'client' => '\\CacheQueue\\Client',
-        'worker' => '\\CacheQueue\\Worker',
-        'logger' => '\\CacheQueue\\FileLogger' // OR '\\CacheQueue\\GraylogLogger'
+        'connection' => '\\CacheQueue\\Connection\\Mongo', //or '\\CacheQueue\\Connection\\Redis' or '\\CacheQueue\\Connection\\Dummy'
+        'client' => '\\CacheQueue\\Client\\Basic',
+        'worker' => '\\CacheQueue\\Worker\\Basic',
+        'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog'
     );

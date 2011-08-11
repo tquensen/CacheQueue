@@ -1,7 +1,7 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Connection;
 
-class MongoConnection implements IConnection
+class Mongo implements ConnectionInterface
 {
     private $dbName = null;
     private $collectionName = null;

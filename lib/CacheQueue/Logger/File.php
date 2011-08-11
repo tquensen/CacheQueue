@@ -1,8 +1,7 @@
 <?php
+namespace CacheQueue\Logger;
 
-namespace CacheQueue;
-
-class FileLogger implements ILogger
+class File implements LoggerInterface
 {
     private $file = null;
     private $showPid = false;
@@ -30,7 +29,7 @@ class FileLogger implements ILogger
     
     private function doLog($message, $level)
     {
-        file_put_contents($this->file, date('[Y-m-d H.i:s] ').($this->showPid ? 'PID '.getmypid().' | ' : '').$level.' '.$message."\n", FILE_APPEND);
+        file_put_contents($this->file, date('[Y-m-d H.i:s] ').($this->showPid ? 'PID '.getmypid().' | ' : '').$level.' '.$message."\n", \FILE_APPEND);
     }
 
 }

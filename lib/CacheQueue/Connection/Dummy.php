@@ -1,7 +1,7 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Connection;
 
-class DummyConnection implements IConnection
+class Dummy implements ConnectionInterface
 {
     private $dbName = null;
     private $collectionName = null;

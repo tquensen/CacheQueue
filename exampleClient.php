@@ -10,27 +10,33 @@ function getCacheQueueClient() {
         return $client;
     }
     
-    
+    //add CacheQueue parent folder to include path
+    set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+     
     //define config file
     $configFile = dirname(__FILE__).'/config.php';
-
     
     $config = array();
     require_once($configFile);
 
     $connectionClass = $config['classes']['connection'];
     $clientClass = $config['classes']['client'];
+ 
+   
     
-    //load required classes - uncomment if you don't use an autoloader 
+    //method 1) load autoloader and register CacheQueue classes
+    require_once('SplClassLoader/SplClassLoader.php');
+    $classLoader = new SplClassLoader('CacheQueue');
+    $classLoader->register();   
+    
+    //method 2) load required classes - uncomment if you don't use an autoloader 
     /*
     $connectionFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($connectionClass, '\\')).'.php';
     $clientFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($clientClass, '\\')).'.php';
 
-    //add CacheQueue parent folder to include path
-    set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
-    require_once('CacheQueue/Exception.php');
-    require_once('CacheQueue/IConnection.php');
-    require_once('CacheQueue/IClient.php');
+    require_once('CacheQueue/Exception/Exception.php');
+    require_once('CacheQueue/Connection/ConnectionInterface.php');
+    require_once('CacheQueue/Client/ClientInterface.php');
     require_once($connectionFile);
     require_once($clientFile);
     
@@ -53,19 +59,19 @@ function simpleGetCacheQueueClient() {
     
     //you only need the connection and the client class and their interfaces
     $filePath = dirname(__FILE__).'/lib/CacheQueue';
-    require_once($filePath.'/Exception.php');
-    require_once($filePath.'/IConnection.php');
-    require_once($filePath.'/IClient.php');
-    require_once($filePath.'/MongoConnection.php'); // or require_once($filePath.'/RedisConnection.php') or require_once($filePath.'/DummyConnection.php');
-    require_once($filePath.'/Client.php');   
+    require_once($filePath.'/Exception/ExceptionInterface.php');
+    require_once($filePath.'/Connection/ConnectonInterface.php');
+    require_once($filePath.'/Client/ClientInterface.php');
+    require_once($filePath.'/Connection/Mongo.php'); // or require_once($filePath.'/Connection/Redis.php') or require_once($filePath.'/Connection/Dummy.php');
+    require_once($filePath.'/Client/Basic.php');   
 
     //define your connection settings manually. 
     //this must match the server side connection configuration to work 
-    $connection = new \CacheQueue\MongoConnection(array(
+    $connection = new \CacheQueue\Connection\Mongo(array(
         'database' => 'cache_queue',
         'collection' => 'cache'
     ));
-    $client = new \CacheQueue\Client($connection);
+    $client = new \CacheQueue\Client\Basic($connection);
 
     return $client;
 }

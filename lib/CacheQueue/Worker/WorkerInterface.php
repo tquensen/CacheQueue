@@ -1,9 +1,12 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Worker;
+use CacheQueue\Connection\ConnectionInterface,
+    CacheQueue\Logger\LoggerInterface,
+    CacheQueue\Exception\Exception;
 
-interface IWorker
+interface WorkerInterface
 {
-    public function __construct(IConnection $connection, $tasks, $config = array());
+    public function __construct(ConnectionInterface $connection, $tasks, $config = array());
     
     /**
      * gets an entry from queue, runs the associated task and updates the value
@@ -25,7 +28,7 @@ interface IWorker
      * 
      * @param IConnection $connection an IConnection instance
      */
-    public function setConnection(IConnection $connection);
+    public function setConnection(ConnectionInterface $connection);
     
     /**
      * gets the connection
@@ -39,7 +42,7 @@ interface IWorker
      * 
      * @param ILogger $logger an ILogger instance
      */
-    public function setLogger(ILogger $logger);
+    public function setLogger(LoggerInterface $logger);
     
     /**
      * gets the logger or null if no logger was set

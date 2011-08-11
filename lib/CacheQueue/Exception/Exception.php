@@ -1,5 +1,5 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Exception;
 
 class Exception extends \Exception
 {

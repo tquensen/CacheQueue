@@ -1,7 +1,7 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Connection;
 
-class RedisConnection implements IConnection
+class Redis implements ConnectionInterface
 {
     private $predis = null;
     private $prefix = null;

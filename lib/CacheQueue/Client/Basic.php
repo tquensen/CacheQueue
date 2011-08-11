@@ -1,12 +1,13 @@
 <?php
 
-namespace CacheQueue;
+namespace CacheQueue\Client;
+use CacheQueue\Connection\ConnectionInterface;
 
-class Client implements IClient
+class Basic implements ClientInterface
 {
     private $connection;
 
-    public function __construct(IConnection $connection, $config = array())
+    public function __construct(ConnectionInterface $connection, $config = array())
     {
         $this->connection = $connection;
     }
@@ -75,7 +76,7 @@ class Client implements IClient
         return $this->connection->removeAll($force, $persistent);
     }
     
-    public function setConnection(IConnection $connection)
+    public function setConnection(ConnectionInterface $connection)
     {
          $this->connection = $connection;
     }

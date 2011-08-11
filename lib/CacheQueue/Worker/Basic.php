@@ -1,14 +1,17 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Worker;
+use CacheQueue\Connection\ConnectionInterface,
+    CacheQueue\Logger\LoggerInterface,
+    CacheQueue\Exception\Exception;
 
-class Worker implements IWorker
+class Basic implements WorkerInterface
 {
     private $connection;
     private $tasks = array();
     
     private $logger = null;
     
-    public function __construct(IConnection $connection, $tasks, $config = array())
+    public function __construct(ConnectionInterface $connection, $tasks, $config = array())
     {
         $this->connection = $connection;
         $this->tasks = $tasks;
@@ -34,7 +37,7 @@ class Worker implements IWorker
         $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
         
         if (!class_exists($taskClass)) {
-            $taskFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
+            $taskFile = str_replace('\\', \DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
             require_once($taskFile);
         }
 
@@ -64,7 +67,7 @@ class Worker implements IWorker
         return $this->connection->getJob();
     }
     
-    public function setLogger(ILogger $logger)
+    public function setLogger(LoggerInterface $logger)
     {
          $this->logger = $logger;
     }
@@ -74,7 +77,7 @@ class Worker implements IWorker
         return $this->logger;
     }
     
-    public function setConnection(IConnection $connection)
+    public function setConnection(ConnectionInterface $connection)
     {
          $this->connection = $connection;
     }

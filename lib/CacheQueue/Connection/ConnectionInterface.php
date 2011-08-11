@@ -1,7 +1,7 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Connection;
 
-interface IConnection
+interface ConnectionInterface
 {
     public function __construct($config = array());
     

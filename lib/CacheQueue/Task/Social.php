@@ -1,5 +1,6 @@
 <?php
 namespace CacheQueue\Task;
+use CacheQueue\Exception\Exception;
 
 class Social
 {

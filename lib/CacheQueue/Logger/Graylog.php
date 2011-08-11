@@ -1,8 +1,7 @@
 <?php
+namespace CacheQueue\Logger;
 
-namespace CacheQueue;
-
-class GraylogLogger implements ILogger
+class Graylog implements LoggerInterface
 {
     private $graylogHostname = null;
     private $graylogPort = null;

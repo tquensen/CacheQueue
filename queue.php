@@ -15,14 +15,24 @@ require_once($configFile);
 
 $connectionClass = $config['classes']['connection'];
 $loggerClass = $config['classes']['logger'];
+
+//method 1) load autoloader and register CacheQueue classes
+require_once('SplClassLoader/SplClassLoader.php');
+$classLoader = new SplClassLoader('CacheQueue');
+$classLoader->register();   
+
+//method 2) load required classes - uncomment if you don't use an autoloader 
+/*
 $connectionFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($connectionClass, '\\')).'.php';
 $loggerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($loggerClass, '\\')).'.php';
 
-require_once('CacheQueue/Exception.php');
-require_once('CacheQueue/ILogger.php');
-require_once('CacheQueue/IConnection.php');
+require_once('CacheQueue/Exception/Exception.php');
+require_once('CacheQueue/Logger/LoggerInterface.php');
+require_once('CacheQueue/Connection/ConnectionInterface.php');
 require_once($loggerFile);
 require_once($connectionFile);
+*/
+
 
 $logger = new $loggerClass($config['logger']);
 $connection = new $connectionClass($config['connection']);
@@ -41,7 +51,7 @@ do {
 //        else {
 //            $logger->logNotice('Queue: no new tasks.');
 //        }
-    } catch (\CacheQueue\Exception $e) {
+    } catch (\CacheQueue\Exception\Exception $e) {
         //log CacheQueue exceptions 
         $logger->logError('Queue: error '.(string)$e);
     } catch (Exception $e) {

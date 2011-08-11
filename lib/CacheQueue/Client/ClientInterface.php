@@ -1,10 +1,11 @@
 <?php
-namespace CacheQueue;
+namespace CacheQueue\Client;
+use CacheQueue\Connection\ConnectionInterface;
 
-interface IClient
+interface ClientInterface
 {
 
-    public function __construct(IConnection $connection, $config = array());
+    public function __construct(ConnectionInterface $connection, $config = array());
 
     /**
      * get a cached entries value
@@ -111,9 +112,9 @@ interface IClient
     /**
      * sets the connection class
      * 
-     * @param IConnection $connection an IConnection instance
+     * @param IConnection $connection an ConnectionInterface instance
      */
-    public function setConnection(IConnection $connection);
+    public function setConnection(ConnectionInterface $connection);
     
     /**
      * gets the connection
