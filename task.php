@@ -43,76 +43,65 @@ if (empty($_SERVER['argv'][1])) {
 }
 
 try {
-    switch (strtolower($_SERVER['argv'][1])) {
-        case 'remove':
-            if (empty($_SERVER['argv'][2])) {
-                echo 'Error: a valid key or "all" required as first parameter!'."\n";
-                exit;
-            } else {
-                $key = trim($_SERVER['argv'][2]);
-            }
-            if (!empty($_SERVER['argv'][3])) {
-                switch (strtolower(trim($_SERVER['argv'][3]))) {
-                    case 'force':
-                        $force = true;
-                        $persistent = null;
-                        break;
-                    case 'persistent':
-                        $force = true;
-                        $persistent = true;
-                        break;
-                    case 'nonpersistent':
-                        $force = true;
-                        $persistent = false;
-                        break;
-                    default:
-                        echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
-                        exit;
-                }
-            } else {
-                $force = false;
+    if (empty($_SERVER['argv'][2])) {
+        echo 'Error: a valid key, "tag" or "all" required as first parameter!'."\n";
+        exit;
+    } else {
+        $key = trim($_SERVER['argv'][2]);
+    }
+    if (trim(strtolower($key)) == 'tag') {
+        if (empty($_SERVER['argv'][3])) {
+            echo 'Error: a tag is required as second parameter!'."\n";
+            exit;
+        }
+        $tag = trim($_SERVER['argv'][3]);
+        $option = !empty($_SERVER['argv'][4]) ? $_SERVER['argv'][4] : null;
+    } else {
+        $option = !empty($_SERVER['argv'][3]) ? $_SERVER['argv'][3] : null;
+    }
+    if (!empty($option)) {
+        switch (strtolower(trim($option))) {
+            case 'force':
+                $force = true;
                 $persistent = null;
-            }
+                break;
+            case 'persistent':
+                $force = true;
+                $persistent = true;
+                break;
+            case 'nonpersistent':
+                $force = true;
+                $persistent = false;
+                break;
+            default:
+                echo 'Unknown option "'.$option.'", valid options are "force", "persistent" and "nonpersistent" '."\n";
+                exit;
+        }
+    } else {
+        $force = false;
+        $persistent = null;
+    }
+
+    switch (strtolower($_SERVER['argv'][1])) {
+        case 'remove':      
             if (trim(strtolower($key)) == 'all') {
                 $status = $connection->removeAll($force, $persistent);
                 echo 'Removing all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
+            } elseif (trim(strtolower($key)) == 'tag') {
+                $status = $connection->removeByTag($tag, $force, $persistent);
+                echo 'Removing all matching entries with tag "'.$tag.'": '.($status ? 'OK' : 'ERROR')."\n";
             } else {
                 $status = $connection->remove($key, $force, $persistent);
-                echo 'Removing entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
+                echo 'Removing entry "'.$key.'": '.($status ? 'OK' : 'ERROR')."\n";
             }
             break;
         case 'outdate':
-            if (empty($_SERVER['argv'][2])) {
-                echo 'Error: a valid key or "all" required as first parameter!'."\n";
-                exit;
-            } else {
-                $key = trim($_SERVER['argv'][2]);
-            }
-            if (!empty($_SERVER['argv'][3])) {
-                switch (strtolower(trim($_SERVER['argv'][3]))) {
-                    case 'force':
-                        $force = true;
-                        $persistent = null;
-                        break;
-                    case 'persistent':
-                        $force = true;
-                        $persistent = true;
-                        break;
-                    case 'nonpersistent':
-                        $force = true;
-                        $persistent = false;
-                        break;
-                    default:
-                        echo 'Unknown option "'.$_SERVER['argv'][3].'", valid options are "force", "persistent" and "nonpersistent" '."\n";
-                        exit;
-                }
-            } else {
-                $force = false;
-                $persistent = null;
-            }
             if (trim(strtolower($key)) == 'all') {
                 $status = $connection->outdateAll($force, $persistent);
                 echo 'Outdating all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
+            } elseif (trim(strtolower($key)) == 'tag') {
+                $status = $connection->outdateByTag($tag, $force, $persistent);
+                echo 'Outdating all matching entries with tag "'.$tag.'": '.($status ? 'OK' : 'ERROR')."\n";
             } else {
                 $status = $connection->outdate($key, $force, $persistent);
                 echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
@@ -130,15 +119,15 @@ function print_help()
 {
     echo <<<EOF
 Available Tasks:
-    remove KEY|ALL [force|persistent|nonpersistent]
-        removes an entry with the key KEY (or all entries if KEY=ALL) from cache
+    remove KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
+        removes an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) from cache
         options: if no option is given, removes only outdated, non persistent entries
                  if "force", removes any entries regardless of freshness or persistent state
                  if "persistent", removes only matching persistent entries
                  if "nonpersistent", removes only non persistent entries
                  
-    outdate KEY|ALL [force|persistent|nonpersistent]
-        outdates an entry with the key KEY (or all entries if KEY=ALL) (sets fresh_until to the past)
+    outdate KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
+        outdates an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) (sets fresh_until to the past)
         options: if no option is given, outdates only fresh, non persistent entries
                  if "force", outdates any entries regardless of freshness or persistent state
                  if "persistent", outdates only matching persistent entries
