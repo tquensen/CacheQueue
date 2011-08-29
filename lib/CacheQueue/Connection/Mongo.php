@@ -48,12 +48,21 @@ class Mongo implements ConnectionInterface
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
 
         $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
-
+        $return['tags'] = isset($result['tags']) ? $result['tags'] : array();
         //$return['task'] = !empty($result['task']) ? $result['task'] : null;
         //$return['params'] = !empty($result['params']) ? $result['params'] : null;
         $return['data'] = isset($result['data']) ? $result['data'] : false;
 
         return $return;
+    }
+    
+    public function getValue($key, $onlyFresh = false)
+    {
+        $result = $this->get($key);
+        if (!$result || empty($result['data'])) {
+            return false;
+        }
+        return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
     }
 
     public function getJob()
@@ -73,6 +82,7 @@ class Mongo implements ConnectionInterface
         $return['key'] = $result['value']['_id'];
         $return['fresh_until'] = !empty($result['value']['queue_fresh_until']) ? $result['value']['queue_fresh_until']->sec : 0;
         $return['persistent'] = !empty($result['queue_persistent']);
+        $return['tags'] = !empty($result['value']['queue_tags']) ? $result['value']['queue_tags'] : null;
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
         $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
@@ -80,7 +90,7 @@ class Mongo implements ConnectionInterface
         return $return;
     }
     
-    public function set($key, $data, $freshFor, $force = false)
+    public function set($key, $data, $freshFor, $force = false, $tags = array())
     {
         if ($freshFor === true) {
             $freshUntil = new \MongoDate(0);
@@ -89,6 +99,9 @@ class Mongo implements ConnectionInterface
             $freshUntil = new \MongoDate(time() + $freshFor);
             $persistent = false;
         }
+        
+        $tags = array_values((array) $tags);
+        
         try {
             if ($force) {
                 return (bool) $this->collection->update(
@@ -99,7 +112,8 @@ class Mongo implements ConnectionInterface
                         '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
-                        'data' => $data
+                        'data' => $data,
+                        'tags' => $tags
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
@@ -114,7 +128,8 @@ class Mongo implements ConnectionInterface
                         '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
-                        'data' => $data
+                        'data' => $data,
+                        'tags' => $tags
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
@@ -128,7 +143,7 @@ class Mongo implements ConnectionInterface
         
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false)
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
         if ($freshFor === true) {
             $freshUntil = new \MongoDate(0);
@@ -137,6 +152,9 @@ class Mongo implements ConnectionInterface
             $freshUntil = new \MongoDate(time() + $freshFor);
             $persistent = false;
         }
+        
+        $tags = array_values((array) $tags);
+        
         try {
             if ($force) {
                 return (bool) $this->collection->update(
@@ -146,6 +164,7 @@ class Mongo implements ConnectionInterface
                     array('$set' => array(
                         'queue_fresh_until' => $freshUntil,
                         'queue_persistent' => $persistent,
+                        'queue_tags' => $tags,
                         'queued' => true,
                         'task' => $task,
                         'params' => $params
@@ -164,6 +183,7 @@ class Mongo implements ConnectionInterface
                     array('$set' => array(
                         'queue_fresh_until' => $freshUntil,
                         'queue_persistent' => $persistent,
+                        'queue_tags' => $tags,
                         'queued' => true,
                         'task' => $task,
                         'params' => $params
@@ -210,6 +230,37 @@ class Mongo implements ConnectionInterface
                         '_id' => $key
                     ),
                     array('safe' => $this->safe)
+                );
+            }
+
+        }
+    }
+    
+    public function removeByTag($tag, $force = false, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        if (!$force) {
+            return (bool) $this->collection->remove(
+                    array(
+                        'fresh_until' => array('$lt' => new \MongoDate()),
+                        'persistent' => false,
+                        'tags' => array('$in' => $tags)
+                    ),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+        } else {
+            if ($persistent !== null) {
+                return (bool) $this->collection->remove(
+                    array(
+                        'persistent' => (bool) $persistent,
+                        'tags' => array('$in' => $tags)
+                    ),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+            } else {
+                return (bool) $this->collection->remove(
+                    array('tags' => array('$in' => $tags)),
+                    array('safe' => $this->safe, 'multiple' => true)
                 );
             }
 
@@ -281,6 +332,50 @@ class Mongo implements ConnectionInterface
                         'persistent' => false
                     )),
                     array('safe' => $this->safe)
+                );
+            }
+
+        }
+    }
+    
+    public function outdateByTag($tag, $force = false, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        if (!$force) {
+            return (bool) $this->collection->update(
+                    array(
+                        'fresh_until' => array('$gt' => new \MongoDate()),
+                        'persistent' => false,
+                        'tags' => array('$in' => $tags)
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1)
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+        } else {
+            if ($persistent !== null) {
+                return (bool) $this->collection->update(
+                    array(
+                        'persistent' => (bool) $persistent,
+                        'tags' => array('$in' => $tags)
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
+                );
+            } else {
+                return (bool) $this->collection->update(
+                    array(
+                        'tags' => array('$in' => $tags)
+                    ),
+                    array('$set' => array(
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false
+                    )),
+                    array('safe' => $this->safe, 'multiple' => true)
                 );
             }
 

@@ -56,7 +56,7 @@ class Basic implements WorkerInterface
         $result = $task->$taskMethod($params, $taskConfig, $job, $this);
 
         if ($result !== null) {
-            $this->connection->set($job['key'], $result, $freshUntil, true);
+            $this->connection->set($job['key'], $result, $freshUntil, false, $job['tags']);
         }
 
         return true;

@@ -12,8 +12,9 @@ class Redis implements ConnectionInterface
         '{key}:presistent' => 0,
         '{key}:queue_fresh_until' => 0,
         '{key}:queue_persistent' => 0,
-        '{key}:task' => '',
-        '{key}:params' => ''
+        //'{key}:task' => '',
+        //'{key}:params' => '',
+        '{key}:tags' => array()
     );
     
     public function __construct($config = array())
@@ -51,11 +52,21 @@ class Redis implements ConnectionInterface
 
         $return['queue_is_fresh'] = !empty($result[4]) || (!empty($result[3]) && $result[3] > time());
 
+        $return['tags'] = !empty($result[5]) ? unserialize($result[5]) : array();
         //$return['task'] = !empty($result['task']) ? $result['task'] : null;
         //$return['params'] = !empty($result['params']) ? $result['params'] : null;
         $return['data'] = !empty($result[0]) ? unserialize($result[0]) : false;
 
         return $return;
+    }
+    
+    public function getValue($key, $onlyFresh = false)
+    {
+        $result = $this->connection->get($key);
+        if (!$result || empty($result['data'])) {
+            return false;
+        }
+        return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
     }
 
     public function getJob()
@@ -73,7 +84,8 @@ class Redis implements ConnectionInterface
             $key.':queue_persistent',
             $key.':task',
             $key.':params',
-            $key.':data'
+            $key.':data',
+            $key.':tags'
         ));
         
         if (empty($result)) {
@@ -86,11 +98,12 @@ class Redis implements ConnectionInterface
         $return['task'] = !empty($result[2]) ? $result[2] : null;
         $return['params'] = !empty($result[3]) ? unserialize($result[3]) : null;
         $return['data'] = !empty($result[4]) ? unserialize($result[4]) : null;
+        $return['tags'] = !empty($result[5]) ? unserialize($result[5]) : array();
         
         return $return;
     }
     
-    public function set($key, $data, $freshFor, $force = false)
+    public function set($key, $data, $freshFor, $force = false, $tags = array())
     {
         if ($freshFor === true) {
             $freshUntil = 0;
@@ -99,14 +112,25 @@ class Redis implements ConnectionInterface
             $freshUntil = time() + $freshFor;
             $persistent = 0;
         }
+        
+        $tags = array_values((array) $tags);
 
         if ($force) {
-            $result = $this->predis->mset(array(
-                   $key.':data' => serialize($data), 
-                   $key.':fresh_until' => $freshUntil,
-                   $key.':persistent' => $persistent
-            ));
-            return (bool) $result;
+            $result = $this->predis->pipeline(function($pipe) use ($key, $data, $freshUntil, $persistent, $tags) {
+                $pipe->multi();
+                $pipe->mset(array(
+                       $key.':data' => serialize($data), 
+                       $key.':fresh_until' => $freshUntil,
+                       $key.':persistent' => $persistent,
+                       $key.':tags' => serialize($tags)
+                ));
+                foreach ($tags as $tag) {
+                    $pipe->sadd('_tag:'.$tag, $key);
+                }
+                $pipe->exec();
+            });
+
+            return $result && !empty($result[count($result)-1]);
         } else {
             $result = $this->predis->pipeline(function($pipe) use ($key) {
                 $pipe->watch($key.':fresh_until', $key.':persistent');
@@ -125,21 +149,25 @@ class Redis implements ConnectionInterface
                 return true;
             }
         
-            $result = $this->predis->pipeline(function($pipe) use ($key, $data, $freshUntil, $persistent) {
+            $result = $this->predis->pipeline(function($pipe) use ($key, $data, $freshUntil, $persistent, $tags) {
                 $pipe->multi();
                 $pipe->mset(array(
                        $key.':data' => serialize($data), 
                        $key.':fresh_until' => $freshUntil,
-                       $key.':persistent' => $persistent
+                       $key.':persistent' => $persistent,
+                       $key.':tags' => serialize($tags)
                 ));
+                foreach ($tags as $tag) {
+                    $pipe->sadd('_tag:'.$tag, $key);
+                }
                 $pipe->exec();
             });
 
-            return $result && !empty($result[2]);
+            return $result && !empty($result[count($result)-1]);
         }
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false)
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
         if ($freshFor === true) {
             $freshUntil = 0;
@@ -149,14 +177,17 @@ class Redis implements ConnectionInterface
             $persistent = 0;
         }
 
+        $tags = array_values((array) $tags);
+        
         if ($force) {
-            $result = $this->predis->pipeline(function($pipe) {
+            $result = $this->predis->pipeline(function($pipe) use ($key, $task, $params, $freshUntil, $persistent, $tags) {
                 $pipe->multi();
                 $pipe->mset(array(
                        $key.':task' => $task, 
                        $key.':params' => serialize($params), 
                        $key.':queue_fresh_until' => $freshUntil,
-                       $key.':queue_persistent' => $persistent
+                       $key.':queue_persistent' => $persistent,
+                       $key.':queue_tags' => serialize($tags)
                 ));
                 $pipe->sadd('_queue', $key);
                 $pipe->exec();
@@ -184,11 +215,12 @@ class Redis implements ConnectionInterface
                 return true;
             }
 
-            $result = $this->predis->pipeline(function($pipe) use ($key, $task, $params, $freshUntil, $persistent) {
+            $result = $this->predis->pipeline(function($pipe) use ($key, $task, $params, $freshUntil, $persistent, $tags) {
                 $pipe->multi();
                 $pipe->mset(array(
                        $key.':queue_fresh_until' => $freshUntil, 
-                       $key.':queue_persistent' => $persistent, 
+                       $key.':queue_persistent' => $persistent,
+                       $key.':queue_tags' => serialize($tags), 
                        $key.':task' => $task,
                        $key.':params' => serialize($params), 
                 ));
@@ -213,7 +245,8 @@ class Redis implements ConnectionInterface
                 $pipe->watch($key.':fresh_until', $key.':persistent');
                 $pipe->mget(array(
                        $key.':fresh_until', 
-                       $key.':persistent'
+                       $key.':persistent',
+                       $key.':tags'
                 ));
             });
 
@@ -225,8 +258,10 @@ class Redis implements ConnectionInterface
                 $this->predis->unwatch();
                 return true;
             }
+            
+            $tags = !empty($result[1][2]) ? unserialize($result[1][2]) : array();
         
-            $result = $this->predis->pipeline(function($pipe) use ($key) {
+            $result = $this->predis->pipeline(function($pipe) use ($key, $tags) {
                 $pipe->multi();
                 $pipe->del(array(
                        $key.':data',
@@ -235,20 +270,26 @@ class Redis implements ConnectionInterface
                        $key.':fresh_until',
                        $key.':persistent',
                        $key.':queue_fresh_until',
-                       $key.':queue_persistent'
+                       $key.':queue_persistent',
+                       $key.':queue_tags',
+                       $key.':tags'
                 ));
                 $pipe->srem('_queue', $key);
+                foreach ($tags as $tag) {
+                    $pipe->srem('_tag:'.$tag, $key);
+                }
                 $pipe->exec();
             });
 
-            return $result && !empty($result[3]);
+            return $result && !empty($result[count($result)-1]);
         } else {
             if ($persistent !== null) {
                 $result = $this->predis->pipeline(function($pipe) use ($key) {
                     $pipe->watch($key.':fresh_until', $key.':persistent');
                     $pipe->mget(array(
                            $key.':fresh_until', 
-                           $key.':persistent'
+                           $key.':persistent',
+                           $key.':tags'
                     ));
                 });
                 
@@ -260,6 +301,8 @@ class Redis implements ConnectionInterface
                     $this->predis->unwatch();
                     return true;
                 }
+                
+                $tags = !empty($result[1][2]) ? unserialize($result[1][2]) : array();
 
                 $result = $this->predis->pipeline(function($pipe) use ($key) {
                     $pipe->multi();
@@ -270,15 +313,26 @@ class Redis implements ConnectionInterface
                            $key.':fresh_until',
                            $key.':persistent',
                            $key.':queue_fresh_until',
-                           $key.':queue_persistent'
+                           $key.':queue_persistent',
+                           $key.':queue_tags',
+                           $key.':tags'
                     ));
                     $pipe->srem('_queue', $key);
+                    foreach ($tags as $tag) {
+                        $pipe->srem('_tag:'.$tag, $key);
+                    }
                     $pipe->exec();
                 });
 
-                return $result && !empty($result[3]);
+                return $result && !empty($result[count($result)-1]);
             } else {
-                $result = $this->predis->pipeline(function($pipe) use ($key) {
+                $result = $this->predis->get(array(
+                       $key.':tags'
+                ));
+                
+                $tags = !empty($result) ? unserialize($result) : array();
+                
+                $result = $this->predis->pipeline(function($pipe) use ($key, $tags) {
                     $pipe->multi();
                     $pipe->del(array(
                            $key.':data',
@@ -287,14 +341,142 @@ class Redis implements ConnectionInterface
                            $key.':fresh_until',
                            $key.':persistent',
                            $key.':queue_fresh_until',
-                           $key.':queue_persistent'
+                           $key.':queue_persistent',
+                           $key.':queue_tags',
+                           $key.':tags'
                     ));
                     $pipe->srem('_queue', $key);
+                    foreach ($tags as $tag) {
+                        $pipe->srem('_tag:'.$tag, $key);
+                    }
                     $pipe->exec();
                 });
                 
-                return !empty($result[3]);
+                return !empty($result[count($result)-1]);
             }
+        }
+    }
+    
+    public function removeByTag($tag, $force = false, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        $fixedKeys = array();
+        foreach ($tags as $tag) {
+            $fixedKeys = array_marge($fixedKeys, $this->predis->smembers($tag));
+        }
+        
+        $entries = array(
+            'fresh_until' => array(),
+            'persistent' => array()
+        );
+        
+        foreach ($fixedKeys as $key) {
+            $entries['persistent'][$key] = $key.':persistent';
+            $entries['fresh_until'][$key] = $key.':fresh_until';
+        }
+        
+        if ($force && $persistent === null) {
+            $result = $this->predis->pipeline(function($pipe) use ($fixedKeys, $tags) {
+                $entriesToRemove = array();
+                foreach ($fixedKeys as $v) {
+                    $entriesToRemove[] = $v.':data';
+                    $entriesToRemove[] = $v.':task';
+                    $entriesToRemove[] = $v.':params';
+                    $entriesToRemove[] = $v.':fresh_until';
+                    $entriesToRemove[] = $v.':persistent';
+                    $entriesToRemove[] = $v.':queue_fresh_until';
+                    $entriesToRemove[] = $v.':queue_persistent';
+                    $entriesToRemove[] = $v.':queue_tags';
+                    $entriesToRemove[] = $v.':tags';
+                }
+                
+                $entriesToRemove[] = '_queue';
+                
+                foreach ($tags as $tag) {
+                    $pipe->del('_tag:'.$tag);
+                }
+                $pipe->del($entriesToRemove);
+                $pipe->exec();
+            });
+            
+            return (bool) $result && !empty($result[count($result)-1]);
+        }
+        
+        if ($force) {
+            $persistent = (int) $persistent;
+            $persistentKeys = array_keys($entries['persistent']);
+            $persistentEntries = array_values($entries['persistent']);
+            $matchingEntries = $this->predis->mget($persistentEntries);
+            
+            $entriesToRemove = array();
+            $keysToRemove = array();
+            foreach ($persistentKeys as $k => $v) {
+                if ($matchingEntries[$k] == $persistent) {
+                    $entriesToRemove[] = $v.':data';
+                    $entriesToRemove[] = $v.':task';
+                    $entriesToRemove[] = $v.':params';
+                    $entriesToRemove[] = $v.':fresh_until';
+                    $entriesToRemove[] = $v.':persistent';
+                    $entriesToRemove[] = $v.':queue_fresh_until';
+                    $entriesToRemove[] = $v.':queue_persistent';
+                    $entriesToRemove[] = $v.':queue_tags';
+                    $entriesToRemove[] = $v.':tags';
+                    
+                    $keysToRemove = $v;
+                }
+            }
+            $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove, $tags) {
+                $pipe->multi();
+                $pipe->del($entriesToRemove);
+                $pipe->srem('_queue', $keysToRemove);
+                foreach ($tags as $tag) {
+                    $pipe->srem('_tag:'.$tag, $keysToRemove);
+                }
+                $pipe->exec();
+            });
+            return (bool) $result && !empty($result[count($result)-1]);
+        } else {
+            $freshUntilKeys = array_keys($entries['fresh_until']);
+            $freshUntilEntries = array_values($entries['fresh_until']);
+            $persistentEntries = str_replace(':fresh_until', ':persistent', $freshUntilEntries);
+            $result = $this->predis->pipeline(function($pipe) use ($freshUntilEntries, $persistentEntries) {
+                $pipe->mget($freshUntilEntries);
+                $pipe->mget($persistentEntries);
+            });
+            
+            if (empty($result)) {
+                return false;
+            }
+            
+            $now = time();
+            
+            $entriesToRemove = array();
+            $keysToRemove = array();
+            foreach ($freshUntilKeys as $k => $v) {
+                if (empty($result[1][$k]) && (empty($result[0][$k]) || $result[0][$k] < time())) {
+                    $entriesToRemove[] = $v.':data';
+                    $entriesToRemove[] = $v.':task';
+                    $entriesToRemove[] = $v.':params';
+                    $entriesToRemove[] = $v.':fresh_until';
+                    $entriesToRemove[] = $v.':persistent';
+                    $entriesToRemove[] = $v.':queue_fresh_until';
+                    $entriesToRemove[] = $v.':queue_persistent';
+                    $entriesToRemove[] = $v.':queue_tags';
+                    $entriesToRemove[] = $v.':tags';
+                    
+                    $keysToRemove = $v;
+                }
+            }
+            $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove, $tags) {
+                $pipe->multi();
+                $pipe->del($entriesToRemove);
+                $pipe->srem('_queue', $keysToRemove);
+                foreach ($tags as $tag) {
+                    $pipe->srem('_tag:'.$tag, $keysToRemove);
+                }
+                $pipe->exec();
+            });
+            return (bool) $result && !empty($result[count($result)-1]);
         }
     }
     
@@ -334,6 +516,8 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':persistent';
                     $entriesToRemove[] = $v.':queue_fresh_until';
                     $entriesToRemove[] = $v.':queue_persistent';
+                    $entriesToRemove[] = $v.':queue_tags';
+                    $entriesToRemove[] = $v.':tags';
                     
                     $keysToRemove = $v;
                 }
@@ -371,6 +555,8 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':persistent';
                     $entriesToRemove[] = $v.':queue_fresh_until';
                     $entriesToRemove[] = $v.':queue_persistent';
+                    $entriesToRemove[] = $v.':queue_tags';
+                    $entriesToRemove[] = $v.':tags';
                     
                     $keysToRemove = $v;
                 }
@@ -451,6 +637,85 @@ class Redis implements ConnectionInterface
                        $key.':persistent' => 0
                 ));
             }
+        }
+    }
+    
+    public function outdateByTag($tag, $force = false, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        $fixedKeys = array();
+        foreach ($tags as $tag) {
+            $fixedKeys = array_marge($fixedKeys, $this->predis->smembers($tag));
+        }
+        
+        $entries = array(
+            'fresh_until' => array(),
+            'persistent' => array()
+        );
+        
+        foreach ($fixedKeys as $key) {
+            $entries['persistent'][$key] = $key.':persistent';
+            $entries['fresh_until'][$key] = $key.':fresh_until';
+        }
+        
+        if ($force && $persistent === null) {
+            $result = $this->predis->pipeline(function($pipe) use ($fixedKeys, $tags) {
+                $entriesToOutdate = array();
+                foreach ($fixedKeys as $v) {
+                    $entriesToOutdate[$v.':persistent'] = true;
+                    $entriesToOutdate[$v.':fresh_until'] = true;
+                }                
+                $pipe->mset($entriesToOutdate);
+                $pipe->exec();
+            });
+            
+            return (bool) $result && !empty($result[count($result)-1]);
+        } elseif ($force) {
+            $persistent = (int) $persistent;
+            $persistentKeys = array_keys($entries['persistent']);
+            $persistentEntries = array_values($entries['persistent']);
+            $matchingEntries = $this->predis->mget($persistentEntries);
+            
+            $result = $this->predis->pipeline(function($pipe) use ($persistentKeys, $matchingEntries, $persistent, $tags) {
+                $entriesToOutdate = array();
+                foreach ($persistentKeys as $k => $v) {
+                    if ($matchingEntries[$k] == $persistent) {
+                        $entriesToOutdate[$v.':fresh_until'] = 0;
+                        $entriesToOutdate[$v.':persistent'] = 0;
+                    }
+                }
+                $pipe->mset($entriesToOutdate);
+                $pipe->exec();
+            });
+            
+            return (bool) $result && !empty($result[count($result)-1]);
+        } else {
+            $freshUntilKeys = array_keys($entries['fresh_until']);
+            $freshUntilEntries = array_values($entries['fresh_until']);
+            $persistentEntries = str_replace(':fresh_until', ':persistent', $freshUntilKeys);
+            $result = $this->predis->pipeline(function($pipe) use ($freshUntilEntries, $persistentEntries) {
+                $pipe->mget($freshUntilEntries);
+                $pipe->mget($persistentEntries);
+            });
+            
+            if (empty($result)) {
+                return false;
+            }
+            
+            $result = $this->predis->pipeline(function($pipe) use ($freshUntilKeys, $result, $persistent, $tags) {
+                $now = time();
+                $entriesToOutdate = array();
+                foreach ($freshUntilKeys as $k => $v) {
+                    if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
+                        $entriesToOutdate[] = $v.':fresh_until';
+                        $entriesToOutdate[] = $v.':persistent';
+                    }
+                }
+                $pipe->mset($entriesToOutdate);
+                $pipe->exec();
+            });
+            
+            return (bool) $result && !empty($result[count($result)-1]);
         }
     }
     

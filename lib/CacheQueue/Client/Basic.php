@@ -14,11 +14,7 @@ class Basic implements ClientInterface
 
     public function get($key, $onlyFresh = false)
     {
-        $result = $this->connection->get($key);
-        if (!$result || empty($result['data'])) {
-            return false;
-        }
-        return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
+        return $this->connection->getValue($key, $onlyFresh);
     }
     
     public function getEntry($key)
@@ -60,6 +56,11 @@ class Basic implements ClientInterface
     {
         return $this->connection->outdate($key, $force, $persistent);
     }
+    
+    public function outdateByTag($tag, $force = false, $persistent = null)
+    {
+        return $this->connection->outdateByTag($tag, $force, $persistent);
+    }
 
     public function outdateAll($force = false, $persistent = null)
     {
@@ -69,6 +70,11 @@ class Basic implements ClientInterface
     public function remove($key, $force = false, $persistent = null)
     {
         return $this->connection->remove($key, $force, $persistent);
+    }
+    
+    public function removeByTag($tag, $force = false, $persistent = null)
+    {
+        return $this->connection->removeByTag($tag, $force, $persistent);
     }
 
     public function removeAll($force = false, $persistent = null)

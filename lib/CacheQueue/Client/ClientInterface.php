@@ -30,10 +30,11 @@ interface ClientInterface
      * @param string $key the key to save the data for
      * @param mixed $data the data to be saved
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
-     * @param bool $force true to force the save even if the data is still fresh
+     * @param bool $force true to force the save even if the data is still fresh,
+     * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return bool if the save was sucessful 
      */
-    public function set($key, $data, $freshFor, $force = false);
+    public function set($key, $data, $freshFor, $force = false, $tags = array());
 
     /**
      * add a queue entry 
@@ -43,9 +44,10 @@ interface ClientInterface
      * @param mixed $params parameters for the task
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the queue even if the data is still fresh
+     * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return bool if the queue was sucessful 
      */
-    public function queue($key, $task, $params, $freshFor, $force = false);
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array());
 
     /**
      * get the data for key from cache, run callback and store the data if its not fresh 
@@ -57,7 +59,7 @@ interface ClientInterface
      * @param bool $force true to force the save even if the data is still fresh
      * @return mixed the cached or generated data
      */
-    public function getOrSet($key, $callback, $params, $freshFor, $force = false);
+    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array());
 
     /**
      * get the data for key from cache, queue a task if its not fresh 
@@ -69,7 +71,7 @@ interface ClientInterface
      * @param bool $force true to force the queue even if the data is still fresh
      * @return mixed the cached data or false if not found
      */
-    public function getOrQueue($key, $task, $params, $freshFor, $force = false);
+    public function getOrQueue($key, $task, $params, $freshFor, $force = false, $tags = array());
     
     /**
      * removes an entry from cache
@@ -91,6 +93,16 @@ interface ClientInterface
     public function removeAll($force = false, $persistent = null);
     
     /**
+     * removes all entries with the given tag(s) from cache
+     * 
+     * @param array|string $tag multiple tags used to find the entries to remove
+     * @param bool $force if false (default), only fresh, non persistent entries will be removed 
+     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @return bool if the request was successful 
+     */
+    public function removeByTag($tag, $force = false, $persistent = null);
+    
+    /**
      * outdates an entry in cache (sets fresh_until to the past)
      * 
      * @param string $key the key of the entry to outdate
@@ -108,6 +120,16 @@ interface ClientInterface
      * @return bool if the request was successful 
      */
     public function outdateAll($force = false, $persistent = null);
+    
+    /**
+     * outdates all entries with the given tag(s) in cache (sets fresh_until to the past)
+     * 
+     * @param array|string $tag multiple tags used to find the entries to outdate
+     * @param bool $force if false (default), only fresh, non persistent entries will be outdated 
+     * @param bool|null $persistent only used if force=true. if true, only persistent entries get outdated, if false only non-persistent entries get outdated, if null(default) both persistent and non persistent entries get outdated
+     * @return bool if the request was successful 
+     */
+    public function outdateByTag($tag, $force = false, $persistent = null);
     
     /**
      * sets the connection class
