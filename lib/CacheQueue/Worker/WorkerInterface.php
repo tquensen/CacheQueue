@@ -9,7 +9,9 @@ interface WorkerInterface
     public function __construct(ConnectionInterface $connection, $tasks, $config = array());
     
     /**
-     * gets an entry from queue, runs the associated task and updates the value
+     * gets an entry from queue, runs the associated task and 
+     * either deletes the entry if it was temporary,
+     * or updated the entries value with the tasks return value (if not returned null)
      * throws an exception on error
      * 
      * @return bool returns true if the task was processed 

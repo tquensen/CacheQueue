@@ -38,7 +38,7 @@ interface ConnectionInterface
     /**
      * add a queue entry 
      * 
-     * @param string $key the key to save the data for
+     * @param string $key the key to save the data for or true to store as temporary
      * @param string $task the task to run
      * @param mixed $params parameters for the task
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent

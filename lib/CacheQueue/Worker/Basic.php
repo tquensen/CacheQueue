@@ -26,7 +26,8 @@ class Basic implements WorkerInterface
         $task = $job['task'];
         $params = $job['params'];
         $freshUntil = $job['persistent'] ? true : $job['fresh_until'];
-
+        $temp = !empty($job['temp']);
+        
         if (empty($this->tasks[$task])) {
             throw new Exception('invalid task '.$task.'.');
         }
@@ -55,7 +56,9 @@ class Basic implements WorkerInterface
 
         $result = $task->$taskMethod($params, $taskConfig, $job, $this);
 
-        if ($result !== null) {
+        if ($temp) {
+            $this->connection->remove($job['key'], true);
+        } elseif ($result !== null) {
             $this->connection->set($job['key'], $result, $freshUntil, false, $job['tags']);
         }
 

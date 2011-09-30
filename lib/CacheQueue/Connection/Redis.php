@@ -85,7 +85,8 @@ class Redis implements ConnectionInterface
             $key.':task',
             $key.':params',
             $key.':data',
-            $key.':tags'
+            $key.':tags',
+            $key.':temp'
         ));
         
         if (empty($result)) {
@@ -99,6 +100,7 @@ class Redis implements ConnectionInterface
         $return['params'] = !empty($result[3]) ? unserialize($result[3]) : null;
         $return['data'] = !empty($result[4]) ? unserialize($result[4]) : null;
         $return['tags'] = !empty($result[5]) ? unserialize($result[5]) : array();
+        $return['temp'] = !empty($result[6]);
         
         return $return;
     }
@@ -169,6 +171,15 @@ class Redis implements ConnectionInterface
 
     public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
+        if ($key === true) {
+            $key = 'temp_'.md5(microtime(true).rand(10000,99999));
+            $force = true;
+            $freshFor = true;
+            $temp = 1;
+        } else {
+            $temp = 0;
+        }
+        
         if ($freshFor === true) {
             $freshUntil = 0;
             $persistent = 1;
@@ -187,7 +198,8 @@ class Redis implements ConnectionInterface
                        $key.':params' => serialize($params), 
                        $key.':queue_fresh_until' => $freshUntil,
                        $key.':queue_persistent' => $persistent,
-                       $key.':queue_tags' => serialize($tags)
+                       $key.':queue_tags' => serialize($tags),
+                       $key.':temp' => $temp
                 ));
                 $pipe->sadd('_queue', $key);
                 $pipe->exec();
@@ -223,6 +235,7 @@ class Redis implements ConnectionInterface
                        $key.':queue_tags' => serialize($tags), 
                        $key.':task' => $task,
                        $key.':params' => serialize($params), 
+                       $key.':temp' => $temp
                 ));
                 $pipe->sadd('_queue', $key);
                 $pipe->exec();
@@ -272,7 +285,8 @@ class Redis implements ConnectionInterface
                        $key.':queue_fresh_until',
                        $key.':queue_persistent',
                        $key.':queue_tags',
-                       $key.':tags'
+                       $key.':tags',
+                       $key.':temp' 
                 ));
                 $pipe->srem('_queue', $key);
                 foreach ($tags as $tag) {
@@ -315,7 +329,8 @@ class Redis implements ConnectionInterface
                            $key.':queue_fresh_until',
                            $key.':queue_persistent',
                            $key.':queue_tags',
-                           $key.':tags'
+                           $key.':tags',
+                           $key.':temp'
                     ));
                     $pipe->srem('_queue', $key);
                     foreach ($tags as $tag) {
@@ -343,7 +358,8 @@ class Redis implements ConnectionInterface
                            $key.':queue_fresh_until',
                            $key.':queue_persistent',
                            $key.':queue_tags',
-                           $key.':tags'
+                           $key.':tags',
+                           $key.':temp'
                     ));
                     $pipe->srem('_queue', $key);
                     foreach ($tags as $tag) {
@@ -378,6 +394,7 @@ class Redis implements ConnectionInterface
         if ($force && $persistent === null) {
             $result = $this->predis->pipeline(function($pipe) use ($fixedKeys, $tags) {
                 $entriesToRemove = array();
+                $keysToRemove = array();
                 foreach ($fixedKeys as $v) {
                     $entriesToRemove[] = $v.':data';
                     $entriesToRemove[] = $v.':task';
@@ -388,14 +405,18 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_persistent';
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
+                    $entriesToRemove[] = $v.':temp';
+                    $keysToRemove = $v;
                 }
                 
-                $entriesToRemove[] = '_queue';
+                //$entriesToRemove[] = '_queue';
                 
+                $pipe->multi();
                 foreach ($tags as $tag) {
                     $pipe->del('_tag:'.$tag);
                 }
                 $pipe->del($entriesToRemove);
+                $pipe->srem('_queue', $keysToRemove);
                 $pipe->exec();
             });
             
@@ -421,7 +442,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_persistent';
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
-                    
+                    $entriesToRemove[] = $v.':temp';
                     $keysToRemove = $v;
                 }
             }
@@ -463,7 +484,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_persistent';
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
-                    
+                    $entriesToRemove[] = $v.':temp';
                     $keysToRemove = $v;
                 }
             }
@@ -518,7 +539,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_persistent';
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
-                    
+                    $entriesToRemove[] = $v.':temp';
                     $keysToRemove = $v;
                 }
             }
@@ -557,6 +578,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_persistent';
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
+                    $entriesToRemove[] = $v.':temp';
                     
                     $keysToRemove = $v;
                 }

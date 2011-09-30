@@ -86,6 +86,7 @@ class Mongo implements ConnectionInterface
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
         $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
+        $return['temp'] = !empty($result['value']['temp']);
         
         return $return;
     }
@@ -145,6 +146,15 @@ class Mongo implements ConnectionInterface
 
     public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
+        if ($key === true) {
+            $key = 'temp_'.md5(microtime(true).rand(10000,99999));
+            $force = true;
+            $freshFor = true;
+            $temp = true;
+        } else {
+            $temp = false;
+        }
+        
         if ($freshFor === true) {
             $freshUntil = new \MongoDate(0);
             $persistent = true;
@@ -167,7 +177,8 @@ class Mongo implements ConnectionInterface
                         'queue_tags' => $tags,
                         'queued' => true,
                         'task' => $task,
-                        'params' => $params
+                        'params' => $params,
+                        'temp' => $temp
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
@@ -186,7 +197,8 @@ class Mongo implements ConnectionInterface
                         'queue_tags' => $tags,
                         'queued' => true,
                         'task' => $task,
-                        'params' => $params
+                        'params' => $params,
+                        'temp' => $temp
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
