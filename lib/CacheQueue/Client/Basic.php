@@ -27,9 +27,14 @@ class Basic implements ClientInterface
         return $this->connection->set($key, $data, $freshFor, $force);
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false)
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
-        return $this->connection->queue($key, $task, $params, $freshFor, $force);
+        return $this->connection->queue($key, $task, $params, $freshFor, $force, $tags);
+    }
+    
+    public function queueTemporary($task, $params, $tags = array())
+    {
+        return $this->connection->queue(true, $task, $params, true, true, $tags);
     }
 
     public function getOrSet($key, $callback, $params, $freshFor, $force = false)

@@ -39,7 +39,7 @@ interface ClientInterface
     /**
      * add a queue entry 
      * 
-     * @param string $key the key to save the data for
+     * @param string $key the key to save the data for or true for a random key
      * @param string $task the task to run
      * @param mixed $params parameters for the task
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
@@ -48,6 +48,19 @@ interface ClientInterface
      * @return bool if the queue was sucessful 
      */
     public function queue($key, $task, $params, $freshFor, $force = false, $tags = array());
+    
+    /**
+     * add a temporary queue entry which gets deleted after the job was executed
+     * 
+     * this will add a persistent queue entry with random key to the queue,
+     * which gets deleted after the job was executed
+     * 
+     * @param string $task the task to run
+     * @param mixed $params parameters for the task
+     * @param array|string $tags one or multiple tags to assign to the cache entry
+     * @return bool if the queue was sucessful 
+     */
+    public function queueTemporary($task, $params, $tags = array());
 
     /**
      * get the data for key from cache, run callback and store the data if its not fresh 
