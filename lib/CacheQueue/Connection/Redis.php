@@ -378,7 +378,7 @@ class Redis implements ConnectionInterface
         $tags = array_values((array) $tag);
         $fixedKeys = array();
         foreach ($tags as $tag) {
-            $fixedKeys = array_marge($fixedKeys, $this->predis->smembers($tag));
+            $fixedKeys = array_merge($fixedKeys, $this->predis->smembers($tag));
         }
         
         $entries = array(

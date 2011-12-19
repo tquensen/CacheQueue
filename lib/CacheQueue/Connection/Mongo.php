@@ -31,6 +31,7 @@ class Mongo implements ConnectionInterface
         $this->collection->ensureIndex(array('queue_fresh_until' => 1), array('safe' => true));
         $this->collection->ensureIndex(array('persistent' => 1), array('safe' => true));
         $this->collection->ensureIndex(array('queue_persistent' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('tags' => 1), array('safe' => true));
     }
 
     public function get($key)

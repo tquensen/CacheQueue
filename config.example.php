@@ -184,7 +184,7 @@ $config = array();
   
     //settings for mongodb
     /*
-     * your cache collection should have indixes 'queued' => 1, 'fresh_until' => 1, 'persistent' => 1, 'queue_fresh_until' => 1 and 'queue_persistent' => 1
+     * your cache collection should have indixes 'queued' => 1, 'fresh_until' => 1, 'persistent' => 1, 'queue_fresh_until' => 1, 'queue_persistent' => 1, 'tags' => 1
      * run \CacheQueue\MongoConnection->setup() to generate these indices or add them manually
      */  
     
