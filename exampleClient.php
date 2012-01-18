@@ -40,10 +40,22 @@ function getCacheQueueClient() {
     require_once($connectionFile);
     require_once($clientFile);
     
+    //logger and worker are only required if you use $client->getOrRun();
+    require_once('CacheQueue/Logger/LoggerInterface.php');
+    require_once('CacheQueue/Worker/WorkerInterface.php');
+    require_once($loggerFile);
+    require_once($workerFile);
+    
     */
-
+    
     $connection = new $connectionClass($config['connection']);
     $client = new $clientClass($connection);
+    
+    //logger and worker are only required if you use $client->getOrRun();
+    $logger = new $loggerClass($config['logger']);
+    $worker = new $workerClass($connection, $config['tasks']);
+    $worker->setLogger($logger);
+    $client->setWorker($worker);
     
     return $client;
 }

@@ -83,6 +83,18 @@ try {
     }
 
     switch (strtolower($_SERVER['argv'][1])) {
+        case 'get':      
+            $data = $connection->get($key);
+            if (!$data) {
+                echo 'Cache entry "'.$key.'" not found'."\n";
+            } else {
+                echo 'Data for entry "'.$key.'":'."\n";
+                echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
+                echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
+                echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
+                echo "\t".'data:       '.$data['data']."\n";
+            }           
+            break;
         case 'remove':      
             if (trim(strtolower($key)) == 'all') {
                 $status = $connection->removeAll($force, $persistent);
@@ -119,6 +131,9 @@ function print_help()
 {
     echo <<<EOF
 Available Tasks:
+    get KEY
+        displays the stored data for the given cache entry
+
     remove KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
         removes an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) from cache
         options: if no option is given, removes only outdated, non persistent entries

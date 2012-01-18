@@ -1,6 +1,7 @@
 <?php
 namespace CacheQueue\Client;
-use CacheQueue\Connection\ConnectionInterface;
+use CacheQueue\Connection\ConnectionInterface,
+    CacheQueue\Worker\WorkerInterface;
 
 interface ClientInterface
 {
@@ -70,6 +71,7 @@ interface ClientInterface
      * @param mixed $params parameters for the callback
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the save even if the data is still fresh
+     * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return mixed the cached or generated data
      */
     public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array());
@@ -82,10 +84,24 @@ interface ClientInterface
      * @param mixed $params parameters for the task
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the queue even if the data is still fresh
+     * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return mixed the cached data or false if not found
      */
     public function getOrQueue($key, $task, $params, $freshFor, $force = false, $tags = array());
-    
+
+    /**
+     * get the data for key from cache, run a task if its not fresh 
+     * 
+     * @param string $key the key to save the data for
+     * @param string $task the task to run if the cached data was outdated
+     * @param mixed $params parameters for the task
+     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param bool $force true to force the queue even if the data is still fresh
+     * @param array|string $tags one or multiple tags to assign to the cache entry
+     * @return mixed the cached data or false if not found
+     */
+    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array());
+
     /**
      * removes an entry from cache
      * 
@@ -147,16 +163,30 @@ interface ClientInterface
     /**
      * sets the connection class
      * 
-     * @param IConnection $connection an ConnectionInterface instance
+     * @param ConnectionInterface $connection an ConnectionInterface instance
      */
     public function setConnection(ConnectionInterface $connection);
     
     /**
      * gets the connection
      * 
-     * @return IConnection the connection instance
+     * @return ConnectionInterface the connection instance
      */
     public function getConnection();
+    
+    /**
+     * sets a worker which is used for getOrRun
+     * 
+     * @param WorkerInterface $logger an WorkerInterface instance
+     */
+    public function setWorker(WorkerInterface $worker);
+    
+    /**
+     * gets the worker or null if no worker was set
+     * 
+     * @return WorkerInterface the worker instance
+     */
+    public function getWorker();
 
 
 }

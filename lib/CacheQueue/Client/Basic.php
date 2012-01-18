@@ -1,11 +1,14 @@
 <?php
 
 namespace CacheQueue\Client;
-use CacheQueue\Connection\ConnectionInterface;
+use CacheQueue\Connection\ConnectionInterface,
+    CacheQueue\Worker\WorkerInterface,
+    CacheQueue\Exception\Exception;
 
 class Basic implements ClientInterface
 {
     private $connection;
+    private $worker;
 
     public function __construct(ConnectionInterface $connection, $config = array())
     {
@@ -37,22 +40,52 @@ class Basic implements ClientInterface
         return $this->connection->queue(true, $task, $params, true, true, $tags);
     }
 
-    public function getOrSet($key, $callback, $params, $freshFor, $force = false)
+    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array())
     {
         $result = $this->connection->get($key);
         if (!$result || !$result['is_fresh'] || $force) {
             $data = call_user_func($callback, $params, $this);
-            $this->set($key, $data, $freshFor, $force);
+            $this->set($key, $data, $freshFor, $force, $tags);
             return $data;
         }
         return empty($result['data']) ? false : $result['data'];
     }
 
-    public function getOrQueue($key, $task, $params, $freshFor, $force = false)
+    public function getOrQueue($key, $task, $params, $freshFor, $force = false, $tags = array())
     {
         $result = $this->connection->get($key);
         if (!$result || (!$result['is_fresh'] && !$result['queue_is_fresh']) || $force) {
-            $this->queue($key, $task, $params, $freshFor, $force);
+            $this->queue($key, $task, $params, $freshFor, $force, $tags);
+        }
+        return empty($result['data']) ? false : $result['data'];
+    }
+    
+    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array())
+    {
+        $result = $this->connection->get($key);
+        if (!$result || (!$result['is_fresh']) || $force) {
+            if (!$worker = $this->getWorker()) {
+                throw new Exception('no worker found');
+            }
+            if ($freshFor === true) {
+                $freshUntil = new \MongoDate(0);
+                $persistent = true;
+            } else {
+                $freshUntil = new \MongoDate(time() + $freshFor);
+                $persistent = false;
+            }
+            $job = array(
+                'key' => $key,
+                'fresh_until' => $freshFor === true ? 0 : time()-$freshFor,
+                'persistent' => $freshFor === true,
+                'tags' => $tags,
+                'task' => $task,
+                'params' => $params,
+                'data' => !empty($result['data']) ? $result['data'] : null,
+                'temp' => false
+            );
+            $data = $worker->work($job);
+            empty($data) ? false : $data;
         }
         return empty($result['data']) ? false : $result['data'];
     }
@@ -95,6 +128,16 @@ class Basic implements ClientInterface
     public function getConnection()
     {
         return $this->connection;
+    }
+
+    public function getWorker()
+    {
+        return $this->worker;
+    }
+
+    public function setWorker(WorkerInterface $worker)
+    {
+        $this->worker = $worker;
     }
 
 }

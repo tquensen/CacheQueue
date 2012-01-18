@@ -17,10 +17,10 @@ class Basic implements WorkerInterface
         $this->tasks = $tasks;
     }
     
-    public function work()
+    public function work($job)
     {
-        if (!$job = $this->getJob()) {
-            return false;
+        if (!$job) {
+            throw new Exception('no job given.');
         }
         
         $task = $job['task'];
@@ -62,7 +62,7 @@ class Basic implements WorkerInterface
             $this->connection->set($job['key'], $result, $freshUntil, false, $job['tags']);
         }
 
-        return true;
+        return $result;
     }
 
     public function getJob()

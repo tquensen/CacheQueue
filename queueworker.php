@@ -51,16 +51,16 @@ try {
     do {
         $status = null;
         try {
-            $status = $worker->work(); 
+            if ($job = $worker->getJob()) {
+                $worker->work($job); 
+            } else {
+                //pause processing for 1 sec if no queued task was found
+                break;
+            }
         } catch (\CacheQueue\Exception\Exception $e) {
             //log CacheQueue exceptions 
             $errors++;
             $logger->logError('Worker: error '.(string) $e);
-        }
-
-        //stop processing if no queued task was found
-        if ($status === false) {
-            break;
         }
 
         $processed++;

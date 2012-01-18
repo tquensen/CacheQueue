@@ -129,4 +129,65 @@ class Analytics
 
         return $topUrls;
     }
+    
+    public function getTopKeywords($params, $config, $job, $worker)
+    {
+        if (empty($config['consumerKey']) || empty($config['consumerSecret'])) {
+            throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
+        }
+        
+        if (empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
+            throw new \Exception('parameters, profileId, token and tokenSecret are required!');
+        }
+        
+        if (empty($params['pathPrefix'])) {
+            $params['pathPrefix'] = '/';
+        }
+        
+        if (!empty($params['count'])) {
+            $limit = $params['count'];
+        } else {
+            $limit = !empty($config['count']) ? $config['count'] : 10;
+        }
+         
+        $client = $this->initClient($config['consumerKey'], $config['consumerSecret'], $params['token'], $params['tokenSecret']);
+        
+        $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : date('Y-m-d',  mktime(0, 0, 0, date('m')-1, date('d'), date('Y')));
+        $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
+        
+        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:keyword&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results='.$limit.'&filters=ga:pagePath%3D~%5E'.urlencode($params['pathPrefix']);
+
+        $results = $client->getFeed($reportURL);
+        $xml = $results->getXML();
+
+        \Zend_Feed::lookupNamespace('default');
+        $feed = new \Zend_Feed_Atom(null, $xml);
+        $topKeywordsTmp = array();
+
+        foreach($feed as $entry) {
+            $title = (string)$entry->dimension->getDOM()->getAttribute('value');
+            $count = (int)$entry->metric->getDOM()->getAttribute('value');
+
+            $topKeywordsTmp[$title] = $count;
+        }
+        
+        arsort($topKeywordsTmp);
+        
+        $topKeywords = array();
+        foreach ($topKeywordsTmp as $k=>$v) {
+            if (!$k || $k == '(not set)' || $k == '(not provided)') {
+                continue;
+            }
+            $topKeywords[] = array(
+                'keyword' => $k,
+                'pageviews' => $v
+            );
+        }
+        
+        if ($logger = $worker->getLogger()) {
+            $logger->logDebug('Analytics: TopKeywords / COUNT='.count($topKeywords));
+        }
+
+        return $topKeywords;
+    }
 }
