@@ -67,13 +67,7 @@ class Basic implements ClientInterface
             if (!$worker = $this->getWorker()) {
                 throw new Exception('no worker found');
             }
-            if ($freshFor === true) {
-                $freshUntil = new \MongoDate(0);
-                $persistent = true;
-            } else {
-                $freshUntil = new \MongoDate(time() + $freshFor);
-                $persistent = false;
-            }
+
             $job = array(
                 'key' => $key,
                 'fresh_until' => $freshFor === true ? 0 : time()-$freshFor,
@@ -85,7 +79,7 @@ class Basic implements ClientInterface
                 'temp' => false
             );
             $data = $worker->work($job);
-            empty($data) ? false : $data;
+            return empty($data) ? false : $data;
         }
         return empty($result['data']) ? false : $result['data'];
     }
