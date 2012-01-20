@@ -4,43 +4,24 @@
 if (empty($_SERVER['argc'])) {
     die();
 }
-
+    
+//add CacheQueue parent folder to include path
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
 
+//define config file
 $configFile = dirname(__FILE__).'/config.php';
 
 $config = array();
 require_once($configFile);
 
-$connectionClass = $config['classes']['connection'];
-$loggerClass = $config['classes']['logger'];
-$workerClass = $config['classes']['worker'];
+//initialize factory
+require_once('CacheQueue/Factory/FactoryInterface.php');
+require_once('CacheQueue/Factory/Factory.php');
 
+$factory = new \CacheQueue\Factory\Factory($config);
 
-//method 1) load autoloader and register CacheQueue classes
-require_once('SplClassLoader/SplClassLoader.php');
-$classLoader = new SplClassLoader('CacheQueue');
-$classLoader->register();   
-
-//method 2) load required classes - uncomment if you don't use an autoloader 
-/*
-$connectionFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($connectionClass, '\\')).'.php';
-$loggerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($loggerClass, '\\')).'.php';
-$workerFile = str_replace('\\', DIRECTORY_SEPARATOR, trim($workerClass, '\\')).'.php';
-
-require_once('CacheQueue/Exception/Exception.php');
-require_once('CacheQueue/Logger/LoggerInterface.php');
-require_once('CacheQueue/Connection/ConnectionInterface.php');
-require_once('CacheQueue/Worker/WorkerInterface.php');
-require_once($loggerFile);
-require_once($connectionFile);
-require_once($workerFile);
-*/
-
-$logger = new $loggerClass($config['logger']);
-$connection = new $connectionClass($config['connection']);
-$worker = new $workerClass($connection, $config['tasks']);
-$worker->setLogger($logger);
+$logger = $factory->getLogger();
+$worker = $factory->getWorker();
 
 //log a "finished" message only after X seconds
 $noticeAfterMoreThanSeconds = 30;
