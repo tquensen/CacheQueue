@@ -65,6 +65,10 @@ interface ClientInterface
 
     /**
      * get the data for key from cache, run callback and store the data if its not fresh 
+     * callback is called with three parameters:
+     *  - mixed $params the $params parameter of the getOrSet call 
+     *  - ClientInterface $client the client instance
+     *  - array|false $entry the result array of $key or false if not found (which may be fresh if force=true)
      * 
      * @param string $key the key to get
      * @param mixed $callback a valid php callable to get the data from if the cache was outdated
@@ -72,9 +76,11 @@ interface ClientInterface
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the save even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
+     * @param int|bool $lockFor locktime in seconds, ater that another lock can be obtained, if false, locks are ignored
+     * @param float|bool $lockTimeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released, if false, the $lockFor value is used
      * @return mixed the cached or generated data
      */
-    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array());
+    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false);
 
     /**
      * get the data for key from cache, queue a task if its not fresh 
@@ -98,9 +104,11 @@ interface ClientInterface
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the queue even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
+     * @param int|bool $lockFor locktime in seconds, ater that another lock can be obtained, if false, locks are ignored
+     * @param float|bool $lockTimeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released, if false, the $lockFor value is used
      * @return mixed the cached data or false if not found
      */
-    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array());
+    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false);
 
     /**
      * removes an entry from cache

@@ -25,9 +25,9 @@ class Basic implements ClientInterface
         return $this->connection->get($key);
     }
 
-    public function set($key, $data, $freshFor, $force = false)
+    public function set($key, $data, $freshFor, $force = false, $tags = array())
     {
-        return $this->connection->set($key, $data, $freshFor, $force);
+        return $this->connection->set($key, $data, $freshFor, $force, $tags);
     }
 
     public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
@@ -40,13 +40,34 @@ class Basic implements ClientInterface
         return $this->connection->queue(true, $task, $params, true, true, $tags);
     }
 
-    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array())
+    public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false)
     {
         $result = $this->connection->get($key);
         if (!$result || !$result['is_fresh'] || $force) {
-            $data = call_user_func($callback, $params, $this);
-            $this->set($key, $data, $freshFor, $force, $tags);
-            return $data;
+            if ($lockFor === false) {
+                $data = call_user_func($callback, $params, $this, $result);
+                $this->set($key, $data, $freshFor, $force, $tags);
+                return $data;
+            } else {
+                $lockKey = $this->connection->obtainLock($key, $lockFor, $lockTimeout !== false ? $lockTimeout : $lockFor);
+                if ($lockKey) {
+                    $result = $this->connection->get($key);
+                    if (!$result || !$result['is_fresh']) {
+                        try {
+                            $data = call_user_func($callback, $params, $this, $result);
+                            $this->set($key, $data, $freshFor, $force, $tags);
+                            $this->connection->releaseLock($key, $lockKey);
+                            return $data;
+                        } catch (\Exception $e) {
+                            $this->connection->releaseLock($key, $lockKey);
+                            throw $e;
+                        }
+                    }
+                    $this->connection->releaseLock($key, $lockKey);
+                } else {
+                    return false;
+                }
+            }
         }
         return empty($result['data']) ? false : $result['data'];
     }
@@ -60,7 +81,7 @@ class Basic implements ClientInterface
         return empty($result['data']) ? false : $result['data'];
     }
     
-    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array())
+    public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false)
     {
         $result = $this->connection->get($key);
         if (!$result || (!$result['is_fresh']) || $force) {
@@ -78,8 +99,29 @@ class Basic implements ClientInterface
                 'data' => !empty($result['data']) ? $result['data'] : null,
                 'temp' => false
             );
-            $data = $worker->work($job);
-            return empty($data) ? false : $data;
+            
+            if ($lockFor === false) {
+                $data = $worker->work($job);
+                return empty($data) ? false : $data;
+            } else {
+                $lockKey = $this->connection->obtainLock($key, $lockFor, $lockTimeout !== false ? $lockTimeout : $lockFor);
+                if ($lockKey) {
+                    $result = $this->connection->get($key);
+                    if (!$result || !$result['is_fresh']) {
+                        try {
+                            $data = $worker->work($job);
+                            $this->connection->releaseLock($key, $lockKey);
+                            return $data;
+                        } catch (\Exception $e) {
+                            $this->connection->releaseLock($key, $lockKey);
+                            throw $e;
+                        }
+                    }
+                    $this->connection->releaseLock($key, $lockKey);
+                } else {
+                    return false;
+                }
+            }
         }
         return empty($result['data']) ? false : $result['data'];
     }

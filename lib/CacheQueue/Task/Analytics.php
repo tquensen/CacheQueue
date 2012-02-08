@@ -1,40 +1,45 @@
 <?php
 namespace CacheQueue\Task;
+use CacheQueue\Exception\Exception;
 
 class Analytics
 {
     private $client = null;
+    private $service = null;
+    private $token = null;
+    private $tokenCacheKey = null;
     
-    private function initClient($consumerKey, $consumerSecret, $token, $tokenSecret)
+    private function initClient($clientKey, $clientSecret, $refresh_token, $connection, $logger)
     {
-        require_once 'Zend/Feed/Atom.php';
-        require_once 'Zend/Gdata.php';
-        require_once 'Zend/Oauth/Token/Access.php';
-        $config = array(
-            'requestScheme' => \Zend_Oauth::REQUEST_SCHEME_HEADER,
-            'version' => '1.0',
-            'signatureMethod' => 'HMAC-SHA1', 
-            //'callbackUrl' => 'http://example.com/',
-            //'siteUrl' => 'http://example.com/',
-            'consumerKey' => $consumerKey,
-            'consumerSecret' => $consumerSecret
-        );
-        $oAuthToken = new \Zend_Oauth_Token_Access();
-        $oAuthToken->setToken($token);
-        $oAuthToken->setTokenSecret($tokenSecret);
-        $client = $oAuthToken->getHttpClient($config);
-        $this->client = new \Zend_Gdata($client);
-        return $this->client;
+        require_once 'Google/apiClient.php';
+        require_once 'Google/contrib/apiAnalyticsService.php';
+
+        $client = new \apiClient();
+        $client->setApplicationName("t3n.de");
+        $client->setClientId('240342825658.apps.googleusercontent.com');
+        $client->setClientSecret('cPSMZAKd0U5raQ4K6r42GyTt');
+        
+        $service = new \apiAnalyticsService($client);
+        
+        $this->tokenCacheKey = 'analytics_token_'.md5($clientKey.$clientSecret.$refresh_token);
+        
+        $token = $this->getToken($refresh_token, $client, $connection, $logger);
+        $client->setAccessToken($token);
+        
+        $this->token = $token;
+        $this->client = $client;
+        $this->service = $service;
+        return $this->service;
     }
     
     public function getPageviews($params, $config, $job, $worker)
     {
-        if (empty($config['consumerKey']) || empty($config['consumerSecret'])) {
-            throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
+        if (empty($config['clientKey']) || empty($config['clientSecret'])) {
+            throw new \Exception('Config parameters clientKey and clientSecret are required!');
         }
         
-        if (empty($params['pagePath']) || empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
-            throw new \Exception('parameters pagePath, profileId, token and tokenSecret are required!');
+        if (empty($params['pagePath']) || empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters parameters pagePath, profileId and refreshToken are required!');
         }
         
 //        $url = str_replace(array('https://', 'http://'), '', $params['pagePath']);
@@ -43,48 +48,46 @@ class Analytics
         
         
         $path = $params['pagePath'];
-        $hostStr = !empty($params['hostname']) ? 'ga:hostname%3D%3D'.$params['hostname'].';' : '';
+        $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].';' : '';
         
         $op = !empty($params['operator']) ? $params['operator'] : '==';
         
-        $client = $this->initClient($config['consumerKey'], $config['consumerSecret'], $params['token'], $params['tokenSecret']);
+        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = '2005-01-01';
         $dateTo = date('Y-m-d');
         
-        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results=50&filters='.$hostStr.'ga:pagePath'.urlencode($op.$path);
-
-        $count = 0;
-
-        $results = $client->getFeed($reportURL);
-        $xml = $results->getXML();
-
-        \Zend_Feed::lookupNamespace('default');
-        $feed = new \Zend_Feed_Atom(null, $xml);
-        foreach($feed as $entry) {
-            $count += (int)$entry->metric->getDOM()->getAttribute('value');
-        }
+        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+            'dimensions' => 'ga:pagePath',
+            'sort' => '-ga:pageviews',
+            'max-results' => 50,
+            'filters' => $hostStr.'ga:pagePath'.$op.$path
+        ));
+        
+        $count = $data['totalsForAllResults']['ga:pageviews'];
         
         if ($logger = $worker->getLogger()) {
-            $logger->logDebug('Analytics: URL='.$reportURL.' / COUNT='.$count);
+            $logger->logDebug('Analytics Pageviews: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
         }
 
+        
         return (int) $count;
     }
     
     public function getTopUrls($params, $config, $job, $worker)
     {
-        if (empty($config['consumerKey']) || empty($config['consumerSecret'])) {
-            throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
+        if (empty($config['clientKey']) || empty($config['clientSecret'])) {
+            throw new \Exception('Config parameters clientKey and clientSecret are required!');
         }
         
-        if (empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
-            throw new \Exception('parameters, profileId, token and tokenSecret are required!');
+        if (empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters, profileId and refreshToken are required!');
         }
         
         if (empty($params['pathPrefix'])) {
             $params['pathPrefix'] = '/';
         }
+        $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].';' : '';
         
         if (!empty($params['count'])) {
             $limit = $params['count'];
@@ -92,23 +95,23 @@ class Analytics
             $limit = !empty($config['count']) ? $config['count'] : 10;
         }
          
-        $client = $this->initClient($config['consumerKey'], $config['consumerSecret'], $params['token'], $params['tokenSecret']);
+        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
         
-        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:pagePath&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results='.$limit.'&filters=ga:pagePath%3D~%5E'.urlencode($params['pathPrefix']);
-
-        $results = $client->getFeed($reportURL);
-        $xml = $results->getXML();
-
-        \Zend_Feed::lookupNamespace('default');
-        $feed = new \Zend_Feed_Atom(null, $xml);
+        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+            'dimensions' => 'ga:pagePath',
+            'sort' => '-ga:pageviews',
+            'max-results' => $limit,
+            'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
+        ));
+        
         $topUrlsTmp = array();
 
-        foreach($feed as $entry) {
-            $title = (string)$entry->dimension->getDOM()->getAttribute('value');
-            $count = (int)$entry->metric->getDOM()->getAttribute('value');
+        foreach($data['rows'] as $row) {
+            $title = (string)$row[0];
+            $count = (int)$row[1];
 
             $topUrlsTmp[$title] = $count;
         }
@@ -124,25 +127,27 @@ class Analytics
         }
         
         if ($logger = $worker->getLogger()) {
-            $logger->logDebug('Analytics: TopUrls / COUNT='.count($topUrls));
+            $logger->logDebug('Analytics: TopUrls: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$params['pathPrefix'].' | COUNT='.count($topUrls));
         }
 
+        
         return $topUrls;
     }
     
     public function getTopKeywords($params, $config, $job, $worker)
     {
-        if (empty($config['consumerKey']) || empty($config['consumerSecret'])) {
-            throw new \Exception('Config parameters consumerKey and consumerSecret are required!');
+        if (empty($config['clientKey']) || empty($config['clientSecret'])) {
+            throw new \Exception('Config parameters clientKey and clientSecret are required!');
         }
         
-        if (empty($params['profileId']) || empty($params['token']) || empty($params['tokenSecret'])) {
-            throw new \Exception('parameters, profileId, token and tokenSecret are required!');
+        if (empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters, profileId and refreshToken are required!');
         }
         
         if (empty($params['pathPrefix'])) {
             $params['pathPrefix'] = '/';
         }
+        $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].';' : '';
         
         if (!empty($params['count'])) {
             $limit = $params['count'];
@@ -150,23 +155,23 @@ class Analytics
             $limit = !empty($config['count']) ? $config['count'] : 10;
         }
          
-        $client = $this->initClient($config['consumerKey'], $config['consumerSecret'], $params['token'], $params['tokenSecret']);
+        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : date('Y-m-d',  mktime(0, 0, 0, date('m')-1, date('d'), date('Y')));
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
+
+        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+            'dimensions' => 'ga:keyword',
+            'sort' => '-ga:pageviews',
+            'max-results' => $limit,
+            'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
+        ));
         
-        $reportURL = 'https://www.google.com/analytics/feeds/data?ids=ga:'.$params['profileId'].'&dimensions=ga:keyword&metrics=ga:pageviews&start-date='.$dateFrom.'&end-date='.$dateTo.'&sort=-ga:pageviews&max-results='.$limit.'&filters=ga:pagePath%3D~%5E'.urlencode($params['pathPrefix']);
-
-        $results = $client->getFeed($reportURL);
-        $xml = $results->getXML();
-
-        \Zend_Feed::lookupNamespace('default');
-        $feed = new \Zend_Feed_Atom(null, $xml);
         $topKeywordsTmp = array();
 
-        foreach($feed as $entry) {
-            $title = (string)$entry->dimension->getDOM()->getAttribute('value');
-            $count = (int)$entry->metric->getDOM()->getAttribute('value');
+        foreach($data['rows'] as $row) {
+            $title = (string)$row[0];
+            $count = (int)$row[1];
 
             $topKeywordsTmp[$title] = $count;
         }
@@ -185,9 +190,44 @@ class Analytics
         }
         
         if ($logger = $worker->getLogger()) {
-            $logger->logDebug('Analytics: TopKeywords / COUNT='.count($topKeywords));
+            $logger->logDebug('Analytics: TopKeywords: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$params['pathPrefix'].' | COUNT='.count($topKeywords));
         }
 
+        
         return $topKeywords;
+    }
+    
+    private function getToken($refresh_token, $client, $connection, $logger)
+    {
+        $cachedTokenData = $connection->get($this->tokenCacheKey);
+        if (!$cachedTokenData || !$cachedTokenData['is_fresh']) {
+            $lockKey = $connection->obtainLock($this->tokenCacheKey, 5);
+            if ($lockKey) {
+                $cachedTokenData = $connection->get($this->tokenCacheKey);
+                if (!$cachedTokenData || !$cachedTokenData['is_fresh']) {
+                    try {
+                        if ($logger) {
+                            $logger->logDebug('Analytics: refreshing access token');
+                        }
+                        $client->refreshToken($refresh_token);
+                        $tmpToken = $client->getAccessToken();     
+                        $tmp = json_decode($tmpToken, true);
+                        $tmp['refresh_token'] = $refresh_token;
+                        $token = json_encode($tmp);
+                        $connection->set($this->tokenCacheKey, $token, $tmp['created'] + $tmp['expires_in'] - 60 - time(), true);
+                        $connection->releaseLock($this->tokenCacheKey, $lockKey);
+                        return $token;
+                    } catch (\Exception $e) {
+                        $connection->releaseLock($this->tokenCacheKey, $lockKey);
+                        throw $e;
+                    }
+                }
+                $connection->releaseLock($this->tokenCacheKey, $lockKey);
+            } else {
+                throw new Exception('could not generate new access token');
+            }
+        } 
+        
+        return $cachedTokenData['data'];
     }
 }

@@ -119,4 +119,23 @@ interface ConnectionInterface
      * @return bool if the request was successful 
      */
     public function outdateByTag($tag, $force = false, $persistent = null);
+    
+    /**
+     * tries to obtain a lock for the given key
+     * 
+     * @param string $key the key
+     * @param int $lockFor locktime in seconds, ater that another lock can be obtained
+     * @param float $timeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released
+     * @return string|bool returns the lockkey if successful, false if not
+     */
+    public function obtainLock($key, $lockFor, $timeout);
+    
+    /**
+     * release a lock
+     * 
+     * @param string $key the key to release the lock for
+     * @param string|bool $lockKey only release the lock with this lockKey, true to force a release
+     * @return bool returns true if the lock was released, false if not (eg wrong lockKey)
+     */
+    public function releaseLock($key, $lockKey);
 }

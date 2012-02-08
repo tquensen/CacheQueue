@@ -68,113 +68,118 @@ $config = array();
     $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline');
     
     /*
+     * oAuth2 / API v3 version!
+     * 
      * get analytics pageviews of a given url
-     * you need a registered oAuth application on the server/task side,
-     * and an Analytics Account, a token and a token secret on the client side
+     * you need a registered oAuth2 application on the server/task side,
+     * and an Analytics Account and a refresh token on the client side
      * 
-     * this task requires the Zend Framework in your include_path!
+     * this task requires the Google api client library in your include_path!
      * 
-     * register your oAuth application here to get a consumerKey/Secret
-     * https://www.google.com/accounts/ManageDomains
+     * register your oAuth2 application here to get a consumerKey/Secret
+     * https://code.google.com/apis/console/
      * 
-     * You can retrieve an oauthToken and tokenSecret here:
-     * http://googlecodesamples.com/oauth_playground/index.php
-     * choose Analytics as scope, select HMAC-SHA1 as signature method,
-     * fill in your consumerKey and consumerSecret, then get and authorize a Request Token,
-     * and upgrade to an access token.
-     * use this access token and tken secret on the client side when queueing the analytics task
+     * You can retrieve a refresh token here:
+     * https://code.google.com/oauthplayground/
+     * first, click the configuration button, check "Use your own OAuth credentials"
+     * and add your client ID/secret, then
+     * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+     * use the refresh token on the client side when queueing the analytics task
      * 
      * params:
      * an array with
      *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
      *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
-     *   'token' => 'the oAuth token'
-     *   'tokenSecret' => 'the oAuth token secret',
+     *   'refreshToken' => 'the oAuth2 refresh token'
      *   'profileId' => 'the Google Analytics profile ID'
      *   'operator' => 'the filter operator (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
      * 
      * options:
-     *   'consumerKey' => 'the consumer key'
-     *   'consumerSecret' => 'theconsumer secret'
+     *   'clientKey' => 'the client key'
+     *   'clientSecret' => 'the client secret'
      */
     $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
-        'consumerKey' => 'your.key',
-        'consumerSecret' => 'YourConsumerSecret'
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret'
     ));
-    
+
     /*
+     * oAuth2 / API v3 version!
+     * 
      * get list of urls ith the most pageviews
-     * you need a registered oAuth application on the server/task side,
-     * and an Analytics Account, a token and a token secret on the client side
+     * you need a registered oAuth2 application on the server/task side,
+     * and an Analytics Account and a refresh token on the client side
      * 
-     * this task requires the Zend Framework in your include_path!
+     * this task requires the Google api client library in your include_path!
      * 
-     * register your oAuth registration here to get a consumerKey/Secret
-     * https://www.google.com/accounts/ManageDomains
+     * register your oAuth2 application here to get a consumerKey/Secret
+     * https://code.google.com/apis/console/
      * 
-     * You can retrieve an oauthToken and tokenSecret here:
-     * http://googlecodesamples.com/oauth_playground/index.php
-     * choose Analytics as scope, select HMAC-SHA1 as signature method,
-     * fill in your consumerKey and consumerSecret, then get and authorize a Request Token,
-     * and upgrade to an access token.
-     * use this access token and tken secret on the client side when queueing the analytics task
+     * You can retrieve a refresh token here:
+     * https://code.google.com/oauthplayground/
+     * first, click the configuration button, check "Use your own OAuth credentials"
+     * and add your client ID/secret, then
+     * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+     * use the refresh token on the client side when queueing the analytics task
      * 
      * params:
      * an array with
      *   'pathPrefix' => 'only consider urls beginning with this prefix. optional, default is "/"',
+     *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)',
      *   'count' => 'limit results to this number (overwrites count option)',
      *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
      *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
-     *   'token' => 'the oAuth token'
-     *   'tokenSecret' => 'the oAuth token secret',
+     *   'refreshToken' => 'the oAuth2 refresh token'
      *   'profileId' => 'the Google Analytics profile ID'
      * 
      * options:
-     *   'consumerKey' => 'the consumer key'
-     *   'consumerSecret' => 'theconsumer secret',
+     *   'clientKey' => 'the client key'
+     *   'clientSecret' => 'the client secret',
      *   'count' => 'limit results to this number (can be overwritten by the count parameter)'
      */
     $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls', array(
-        'consumerKey' => 'your.key',
-        'consumerSecret' => 'YourConsumerSecret',
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret',
         'count' => 20
     ));
     
     /*
+     * oAuth2 / API v3 version!
+     * 
      * get list of keywords with the most pageviews
-     * you need a registered oAuth application on the server/task side,
-     * and an Analytics Account, a token and a token secret on the client side
+     you need a registered oAuth2 application on the server/task side,
+     * and an Analytics Account and a refresh token on the client side
      * 
-     * this task requires the Zend Framework in your include_path!
+     * this task requires the Google api client library in your include_path!
      * 
-     * register your oAuth registration here to get a consumerKey/Secret
-     * https://www.google.com/accounts/ManageDomains
+     * register your oAuth2 application here to get a consumerKey/Secret
+     * https://code.google.com/apis/console/
      * 
-     * You can retrieve an oauthToken and tokenSecret here:
-     * http://googlecodesamples.com/oauth_playground/index.php
-     * choose Analytics as scope, select HMAC-SHA1 as signature method,
-     * fill in your consumerKey and consumerSecret, then get and authorize a Request Token,
-     * and upgrade to an access token.
-     * use this access token and tken secret on the client side when queueing the analytics task
+     * You can retrieve a refresh token here:
+     * https://code.google.com/oauthplayground/
+     * first, click the configuration button, check "Use your own OAuth credentials"
+     * and add your client ID/secret, then
+     * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+     * use the refresh token on the client side when queueing the analytics task
      * 
      * params:
      * an array with
-     *   'pathPrefix' => 'only consider target urls beginning with this prefix',
+     *   'pathPrefix' => 'only consider urls beginning with this prefix. optional, default is "/"',
+     *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)',
      *   'count' => 'limit results to this number (overwrites count option)',
-     *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 1 month ago.',
+     *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
      *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
-     *   'token' => 'the oAuth token'
-     *   'tokenSecret' => 'the oAuth token secret',
+     *   'refreshToken' => 'the oAuth2 refresh token'
      *   'profileId' => 'the Google Analytics profile ID'
      * 
      * options:
-     *   'consumerKey' => 'the consumer key'
-     *   'consumerSecret' => 'theconsumer secret',
+     *   'clientKey' => 'the client key'
+     *   'clientSecret' => 'the client secret',
      *   'count' => 'limit results to this number (can be overwritten by the count parameter)'
      */
     $config['tasks']['topkeywords'] = array('\\CacheQueue\\Task\\Analytics', 'getTopKeywords', array(
-        'consumerKey' => 'your.key',
-        'consumerSecret' => 'YourConsumerSecret',
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret',
         'count' => 100
     ));
     

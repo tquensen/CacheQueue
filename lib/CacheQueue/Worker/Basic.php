@@ -59,7 +59,7 @@ class Basic implements WorkerInterface
         if ($temp) {
             $this->connection->remove($job['key'], true);
         } elseif ($result !== null) {
-            $this->connection->set($job['key'], $result, $freshUntil, false, $job['tags']);
+            $this->connection->set($job['key'], $result, $freshUntil === true ? $freshUntil : $freshUntil-time(), false, $job['tags']);
         }
 
         return $result;

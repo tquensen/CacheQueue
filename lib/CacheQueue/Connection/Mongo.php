@@ -111,7 +111,6 @@ class Mongo implements ConnectionInterface
                         '_id' => $key
                     ),
                     array('$set' => array(
-                        '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data,
@@ -123,11 +122,16 @@ class Mongo implements ConnectionInterface
                 return (bool) $this->collection->update(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false
+                        '$or' => array(
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false
+                                ),
+                            array('persistent' => null)
+                        )
+                        
                     ),
                     array('$set' => array(
-                        '_id' => $key,
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data,
@@ -187,10 +191,28 @@ class Mongo implements ConnectionInterface
                 return (bool) $this->collection->update(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array('$lt' => new \MongoDate()),
-                        'queue_fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false,
-                        'queue_persistent' => false
+                        '$or' => array(
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'queue_fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false,
+                                'queue_persistent' => false
+                                ),
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false,
+                                'queue_persistent' => null
+                                ),
+                            array(
+                                'queue_fresh_until' => array('$lt' => new \MongoDate()),
+                                'queue_persistent' => false,
+                                'persistent' => null
+                                ),
+                            array(
+                                'persistent' => null,
+                                'queue_persistent' => null
+                                ),
+                        )
                     ),
                     array('$set' => array(
                         'queue_fresh_until' => $freshUntil,
@@ -223,8 +245,13 @@ class Mongo implements ConnectionInterface
             return (bool) $this->collection->remove(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false
+                        '$or' => array(
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false
+                                ),
+                            array('persistent' => null)
+                        )
                     ),
                     array('safe' => $this->safe)
                 );
@@ -255,8 +282,13 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->remove(
                     array(
-                        'fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false,
+                        '$or' => array(
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false
+                                ),
+                            array('persistent' => null)
+                        ),
                         'tags' => array('$in' => $tags)
                     ),
                     array('safe' => $this->safe, 'multiple' => true)
@@ -285,8 +317,13 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->remove(
                     array(
-                        'fresh_until' => array('$lt' => new \MongoDate()),
-                        'persistent' => false
+                        '$or' => array(
+                            array(
+                                'fresh_until' => array('$lt' => new \MongoDate()),
+                                'persistent' => false
+                                ),
+                            array('persistent' => null)
+                        )
                     ),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -433,6 +470,39 @@ class Mongo implements ConnectionInterface
             }
 
         }
+    }
+
+    public function obtainLock($key, $lockFor, $timeout)
+    {
+        $waitUntil = microtime(true) + $timeout;
+        $lockKey = md5(microtime().rand(100000,999999));
+        do {
+            $this->set($key.'._lock', $lockKey, $lockFor);
+            $data = $this->get($key.'._lock');
+            if ($data && $data['data'] == $lockKey) {
+                return $lockKey;
+            } elseif ($data && !$data['is_fresh']) {
+                $this->releaseLock($key, $data['data']);
+            } else {
+                usleep(50000);
+            }
+        } while(microtime(true) < $waitUntil);
+        return false;
+    }
+
+    public function releaseLock($key, $lockKey)
+    {
+        if ($lockKey === true) {
+            return $this->remove($key.'._lock', true);
+        }
+        $this->collection->remove(
+            array(
+                '_id' => $key.'._lock',
+                'data' => $lockKey
+            ),
+            array('safe' => $this->safe)
+        );
+        return true;
     }
     
 }

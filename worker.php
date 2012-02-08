@@ -21,6 +21,7 @@ require_once('CacheQueue/Factory/Factory.php');
 $factory = new \CacheQueue\Factory\Factory($config);
 
 $logger = $factory->getLogger();
+$connection = $factory->getConnection();
 $worker = $factory->getWorker();
 
 //log a "finished" message only after X seconds

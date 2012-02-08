@@ -65,5 +65,25 @@ class Dummy implements ConnectionInterface
     {
         return false;
     }
+
+    public function obtainLock($key, $lockFor, $timeout)
+    {
+        return false;
+    }
+
+    public function outdateByTag($tag, $force = false, $persistent = null)
+    {
+        return false;
+    }
+
+    public function releaseLock($key, $lockKey)
+    {
+        return false;
+    }
+
+    public function removeByTag($tag, $force = false, $persistent = null)
+    {
+        return false;
+    }
     
 }

@@ -22,6 +22,7 @@ $factory = new \CacheQueue\Factory\Factory($config);
 
 $logger = $factory->getLogger();
 $connection = $factory->getConnection();
+$connection = $factory->getConnection();
 
 $tasksPerWorker = 10;
 

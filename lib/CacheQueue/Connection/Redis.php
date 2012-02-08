@@ -378,8 +378,28 @@ class Redis implements ConnectionInterface
         $tags = array_values((array) $tag);
         $fixedKeys = array();
         foreach ($tags as $tag) {
-            $fixedKeys = array_merge($fixedKeys, $this->predis->smembers($tag));
+            $fixedKeys = array_merge($fixedKeys, $this->predis->smembers('_tag:'.$tag));
         }
+        
+        $reallyFixedKeys = array();
+        $entryTags = array();
+        foreach ($fixedKeys as $entryTag) {
+            $entryTags[$entryTag] = $entryTag.':tags';
+        }
+        $entryTagsKeys = array_keys($entryTags);
+        $entryTagsData = $this->predis->mget(array_values($entryTags));
+        foreach ($entryTagsKeys as $k => $v) {
+            if ($entryTagsData[$k] && $entryTagsArray = unserialize($entryTagsData[$k])) {
+                foreach ($tags as $tag) {
+                    if (in_array($tag, $entryTagsArray)) {
+                        $reallyFixedKeys[] = $v;
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        $fixedKeys = $reallyFixedKeys;
         
         $entries = array(
             'fresh_until' => array(),
@@ -670,6 +690,26 @@ class Redis implements ConnectionInterface
             $fixedKeys = array_marge($fixedKeys, $this->predis->smembers($tag));
         }
         
+        $reallyFixedKeys = array();
+        $entryTags = array();
+        foreach ($fixedKeys as $entryTag) {
+            $entryTags[$entryTag] = $entryTag.':tags';
+        }
+        $entryTagsKeys = array_keys($entryTags);
+        $entryTagsData = $this->predis->mget(array_values($entryTags));
+        foreach ($entryTagsKeys as $k => $v) {
+            if ($entryTagsData[$k] && $entryTagsArray = unserialize($entryTagsData[$k])) {
+                foreach ($tags as $tag) {
+                    if (in_array($tag, $entryTagsArray)) {
+                        $reallyFixedKeys[] = $v;
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        $fixedKeys = $reallyFixedKeys;
+        
         $entries = array(
             'fresh_until' => array(),
             'persistent' => array()
@@ -806,6 +846,67 @@ class Redis implements ConnectionInterface
             }
             return $this->predis->mset($entriesToOutdate);
         }
+    }
+    
+    
+    public function obtainLock($key, $lockFor, $timeout)
+    {
+        $waitUntil = microtime(true) + $timeout;
+        $lockKey = md5(microtime().rand(100000,999999));
+        do {
+            $this->set($key.'._lock', $lockKey, $lockFor);
+            $data = $this->get($key.'._lock');
+            if ($data && $data['data'] == $lockKey) {
+                return $lockKey;
+            } elseif ($data && !$data['is_fresh']) {
+                $this->releaseLock($key, $data['data']);
+            } else {
+                usleep(50000);
+            }
+        } while(microtime(true) < $waitUntil);
+        return false;
+    }
+    
+    public function releaseLock($key, $lockKey)
+    {
+        if ($lockKey === true) {
+            return $this->remove($key.'._lock', true);
+        }
+        $result = $this->predis->pipeline(function($pipe) use ($key) {
+                $pipe->watch($key.'._lock'.':data');
+                $pipe->mget(array(
+                       $key.'._lock'.':data'
+                ));
+            });
+
+            if (empty($result[1])) {
+                $this->predis->unwatch();
+                return false;
+            }
+            if ($result[1][0] !== $lockKey) {
+                $this->predis->unwatch();
+                return false;
+            }
+            
+        
+            $result = $this->predis->pipeline(function($pipe) use ($key) {
+                $pipe->multi();
+                $pipe->del(array(
+                       $key.'._lock'.':data',
+                       $key.'._lock'.':task',
+                       $key.'._lock'.':params',
+                       $key.'._lock'.':fresh_until',
+                       $key.'._lock'.':persistent',
+                       $key.'._lock'.':queue_fresh_until',
+                       $key.'._lock'.':queue_persistent',
+                       $key.'._lock'.':queue_tags',
+                       $key.'._lock'.':tags',
+                       $key.'._lock'.':temp' 
+                ));
+                $pipe->exec();
+            });
+
+            return true;
     }
     
 }
