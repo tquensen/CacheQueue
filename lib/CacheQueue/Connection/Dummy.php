@@ -66,7 +66,7 @@ class Dummy implements ConnectionInterface
         return false;
     }
 
-    public function obtainLock($key, $lockFor, $timeout)
+    public function obtainLock($key, $lockFor, $timeout = null)
     {
         return false;
     }

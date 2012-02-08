@@ -472,9 +472,9 @@ class Mongo implements ConnectionInterface
         }
     }
 
-    public function obtainLock($key, $lockFor, $timeout)
+    public function obtainLock($key, $lockFor, $timeout = null)
     {
-        $waitUntil = microtime(true) + $timeout;
+        $waitUntil = microtime(true) + ($timeout !== null ? (float) $timeout : (float) $lockFor);
         $lockKey = md5(microtime().rand(100000,999999));
         do {
             $this->set($key.'._lock', $lockKey, $lockFor);

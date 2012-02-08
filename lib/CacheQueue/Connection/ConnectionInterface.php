@@ -125,10 +125,10 @@ interface ConnectionInterface
      * 
      * @param string $key the key
      * @param int $lockFor locktime in seconds, ater that another lock can be obtained
-     * @param float $timeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released
+     * @param float|null $timeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released or null to use $lockFor
      * @return string|bool returns the lockkey if successful, false if not
      */
-    public function obtainLock($key, $lockFor, $timeout);
+    public function obtainLock($key, $lockFor, $timeout = null);
     
     /**
      * release a lock
