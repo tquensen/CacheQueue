@@ -88,6 +88,10 @@ class Redis implements ConnectionInterface
             $key.':tags',
             $key.':temp'
         ));
+        $this->predis->mset(array(
+                $key.':queue_fresh_until' => 0, 
+                $key.':queue_persistent' => 0
+        ));
         
         if (empty($result)) {
             return false;

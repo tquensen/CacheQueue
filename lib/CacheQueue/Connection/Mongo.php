@@ -71,7 +71,7 @@ class Mongo implements ConnectionInterface
         $result = $this->db->command(array(
             'findAndModify' => $this->collectionName,
             'query' => array('queued' => true),
-            'update' => array('$set' => array('queued' => false))
+            'update' => array('$set' => array('queued' => false, 'queue_fresh_until' => new \MongoDate(0), 'queue_persistent' => false))
         ));
         
         if (empty($result['ok']) || empty($result['value'])) {
