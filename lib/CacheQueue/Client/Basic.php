@@ -97,7 +97,8 @@ class Basic implements ClientInterface
                 'task' => $task,
                 'params' => $params,
                 'data' => !empty($result['data']) ? $result['data'] : null,
-                'temp' => false
+                'temp' => false,
+                'worker_id' => $worker->getWorkerId()
             );
             
             if ($lockFor === false) {

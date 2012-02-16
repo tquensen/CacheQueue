@@ -9,12 +9,16 @@ class Basic implements WorkerInterface
     private $connection;
     private $tasks = array();
     
+    private $workerId = null;
+    
     private $logger = null;
     
     public function __construct(ConnectionInterface $connection, $tasks, $config = array())
     {
         $this->connection = $connection;
         $this->tasks = $tasks;
+        
+        $this->workerId = getmypid();
     }
     
     public function work($job)
@@ -23,43 +27,52 @@ class Basic implements WorkerInterface
             throw new Exception('no job given.');
         }
         
-        $task = $job['task'];
-        $params = $job['params'];
-        $freshUntil = $job['persistent'] ? true : $job['fresh_until'];
-        $temp = !empty($job['temp']);
         
-        if (empty($this->tasks[$task])) {
-            throw new Exception('invalid task '.$task.'.');
-        }
+        try {
+            
+            $task = $job['task'];
+            $params = $job['params'];
+            $freshUntil = $job['persistent'] ? true : $job['fresh_until'];
+            $temp = !empty($job['temp']);
 
-        $taskData = (array) $this->tasks[$task];
-        $taskClass = $taskData[0];
-        $taskMethod = !empty($taskData[1]) ? $taskData[1] : 'execute';
-        $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
-        
-        if (!class_exists($taskClass)) {
-            $taskFile = str_replace('\\', \DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
-            require_once($taskFile);
-        }
+            if (empty($this->tasks[$task])) {
+                throw new Exception('invalid task '.$task.'.');
+            }
 
-        if (!class_exists($taskClass)) {
-            throw new Exception('class '.$taskClass.' not found.');
-        }
-        if (!method_exists($taskClass, $taskMethod)) {
-            throw new Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
-        }
+            $taskData = (array) $this->tasks[$task];
+            $taskClass = $taskData[0];
+            $taskMethod = !empty($taskData[1]) ? $taskData[1] : 'execute';
+            $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
 
-        $task = new $taskClass;     
-//        if (!$task instanceof \CacheQueue\ITask) {
-//            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
-//        }
+            if (!class_exists($taskClass)) {
+                $taskFile = str_replace('\\', \DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
+                require_once($taskFile);
+            }
 
-        $result = $task->$taskMethod($params, $taskConfig, $job, $this);
+            if (!class_exists($taskClass)) {
+                throw new Exception('class '.$taskClass.' not found.');
+            }
+            if (!method_exists($taskClass, $taskMethod)) {
+                throw new Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
+            }
 
-        if ($temp) {
-            $this->connection->remove($job['key'], true);
-        } elseif ($result !== null) {
-            $this->connection->set($job['key'], $result, $freshUntil === true ? $freshUntil : $freshUntil-time(), false, $job['tags']);
+            $task = new $taskClass;     
+    //        if (!$task instanceof \CacheQueue\ITask) {
+    //            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
+    //        }
+
+            $result = $task->$taskMethod($params, $taskConfig, $job, $this);
+
+            if ($temp) {
+                $this->connection->remove($job['key'], true);
+            } elseif ($result !== null) {
+                $this->connection->set($job['key'], $result, $freshUntil === true ? $freshUntil : $freshUntil-time(), false, $job['tags']);
+            }
+            
+            $this->connection->updateJobStatus($job['key'], $job['worker_id']);
+        } catch (\Exception $e) {
+            $this->connection->updateJobStatus($job['key'], $job['worker_id']);
+            throw $e;
         }
 
         return $result;
@@ -67,7 +80,12 @@ class Basic implements WorkerInterface
 
     public function getJob()
     {
-        return $this->connection->getJob();
+        return $this->connection->getJob($this->workerId);
+    }
+    
+    public function getWorkerId()
+    {
+        return $this->workerId;
     }
     
     public function setLogger(LoggerInterface $logger)

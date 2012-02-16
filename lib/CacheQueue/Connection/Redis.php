@@ -69,7 +69,7 @@ class Redis implements ConnectionInterface
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
     }
 
-    public function getJob()
+    public function getJob($workerId)
     {
         $result = $this->predis->spop('_queue');
         
@@ -79,34 +79,71 @@ class Redis implements ConnectionInterface
         
         $key = $result;
         
-        $result = $this->predis->mget(array(
-            $key.':queue_fresh_until',
-            $key.':queue_persistent',
-            $key.':task',
-            $key.':params',
-            $key.':data',
-            $key.':tags',
-            $key.':temp'
-        ));
-        $this->predis->mset(array(
-                $key.':queue_fresh_until' => 0, 
-                $key.':queue_persistent' => 0
-        ));
+        $result = $this->predis->pipeline(function($pipe) use ($key) {
+            $pipe->set($key.':queue_worker_id', $workerId);
+
+            $pipe->mget(array(
+                $key.':queue_fresh_until',
+                $key.':queue_persistent',
+                $key.':task',
+                $key.':params',
+                $key.':data',
+                $key.':tags',
+                $key.':temp'
+            ));
+            
+            $pipe->exec();
+        });
         
-        if (empty($result)) {
+        if (empty($result[1])) {
             return false;
         }
         
+        $return = array();
         $return['key'] = $key;
-        $return['fresh_until'] = !empty($result[0]) ? $result[0] : 0;
-        $return['persistent'] = !empty($result[1]);
-        $return['task'] = !empty($result[2]) ? $result[2] : null;
-        $return['params'] = !empty($result[3]) ? unserialize($result[3]) : null;
-        $return['data'] = !empty($result[4]) ? unserialize($result[4]) : null;
-        $return['tags'] = !empty($result[5]) ? unserialize($result[5]) : array();
-        $return['temp'] = !empty($result[6]);
+        $return['fresh_until'] = !empty($result[1][0]) ? $result[1][0] : 0;
+        $return['persistent'] = !empty($result[1][1]);
+        $return['task'] = !empty($result[1][2]) ? $result[1][2] : null;
+        $return['params'] = !empty($result[1][3]) ? unserialize($result[1][3]) : null;
+        $return['data'] = !empty($result[1][4]) ? unserialize($result[1][4]) : null;
+        $return['tags'] = !empty($result[1][5]) ? unserialize($result[1][5]) : array();
+        $return['temp'] = !empty($result[1][6]);
+        $return['worker_id'] = $workerId;
         
         return $return;
+    }
+    
+    public function updateJobStatus($key, $workerId)
+    {
+        $result = $this->predis->pipeline(function($pipe) use ($key) {
+            $pipe->watch($key.':queue_worker_id', $key.':queue_fresh_until', $key.':queue_persistent');
+            $pipe->mget(array(
+                    $key.':queue_worker_id', 
+                    $key.':queue_fresh_until', 
+                    $key.':queue_persistent'
+            ));
+        });
+
+        if (empty($result[1])) {
+            $this->predis->unwatch();
+            return false;
+        }
+        if (!$result[1][0] || $result[1][0] != $workerId ) {
+            $this->predis->unwatch();
+            return false;
+        }
+        
+        $result = $this->predis->pipeline(function($pipe) use ($key) {
+            $pipe->multi();
+            $pipe->mset(array(
+                    $key.':queue_worker_id' => 0, 
+                    $key.':queue_fresh_until' => 0,
+                    $key.':queue_persistent' => 0
+            ));
+            $pipe->exec();
+        });
+
+        return $result && !empty($result[count($result)-1]);
     }
     
     public function set($key, $data, $freshFor, $force = false, $tags = array())

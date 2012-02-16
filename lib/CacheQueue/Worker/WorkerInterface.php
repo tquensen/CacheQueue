@@ -28,6 +28,13 @@ interface WorkerInterface
     public function getJob();
     
     /**
+     * gets the worker id
+     * 
+     * @return int the worker id
+     */
+    public function getWorkerId();
+    
+    /**
      * sets the connection class
      * 
      * @param ConnectionInterface $connection an ConnectionInterface instance

@@ -26,7 +26,12 @@ class Dummy implements ConnectionInterface
         return false;
     }
 
-    public function getJob()
+    public function getJob($workerId)
+    {
+        return false;
+    }
+    
+    public function updateJobStatus($key, $workerId)
     {
         return false;
     }

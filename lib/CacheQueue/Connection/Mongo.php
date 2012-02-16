@@ -66,12 +66,12 @@ class Mongo implements ConnectionInterface
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
     }
 
-    public function getJob()
+    public function getJob($workerId)
     {
         $result = $this->db->command(array(
             'findAndModify' => $this->collectionName,
             'query' => array('queued' => true),
-            'update' => array('$set' => array('queued' => false, 'queue_fresh_until' => new \MongoDate(0), 'queue_persistent' => false))
+            'update' => array('$set' => array('queued' => false))
         ));
         
         if (empty($result['ok']) || empty($result['value'])) {
@@ -88,8 +88,25 @@ class Mongo implements ConnectionInterface
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
         $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
         $return['temp'] = !empty($result['value']['temp']);
+        $return['worker_id'] = $workerId;
         
         return $return;
+    }
+    
+    public function updateJobStatus($key, $workerId)
+    {
+        return (bool) $this->collection->update(
+                array(
+                    '_id' => $key,
+                    'queued' => $workerId
+                ),
+                array('$set' => array(
+                    'queue_fresh_until' => new \MongoDate(0),
+                    'queue_persistent' => false,
+                    'queued' => false
+                )),
+                array('safe' => $this->safe)
+            );
     }
     
     public function set($key, $data, $freshFor, $force = false, $tags = array())

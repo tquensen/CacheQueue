@@ -51,10 +51,17 @@ interface ConnectionInterface
     /**
      * gets a queued entry and removes it from queue
      * 
+     * @param int $workerId a unique id of the current worker
      * @return array|bool the job data or false if no job was found 
      */
-    public function getJob();
+    public function getJob($workerId);
     
+    /**
+     * resets the queue_* data
+     * @param int $workerId a unique id of the current worker 
+     */
+    public function updateJobStatus($key, $workerId);
+            
     /**
      * returns the number of queued cache entries
      * 
