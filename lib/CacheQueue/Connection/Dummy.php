@@ -36,12 +36,12 @@ class Dummy implements ConnectionInterface
         return false;
     }
     
-    public function set($key, $data, $freshFor, $force = false)
+    public function set($key, $data, $freshFor, $force = false, $tags = array())
     {
         return false;
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false)
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array(), $priority = 50)
     {
         return false;
     }

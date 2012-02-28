@@ -71,15 +71,34 @@ class Redis implements ConnectionInterface
 
     public function getJob($workerId)
     {
-        $result = $this->predis->spop('_queue');
+//        WATCH zset
+//        element = ZRANGE zset 0 0
+//        MULTI
+//        ZREM zset element
+//        EXEC
         
-        if (empty($result)) {
+        $tries = 5;
+        do {
+            $this->predis->watch('_queue');
+            $jobData = $this->predis->zrange('_queue', 0, 0);
+            if (empty($jobData)) {
+                $this->predis->unwatch();
+                return false;
+            } else {
+                $key = $jobData[0];
+            }
+            $result = $this->predis->pipeline(function($pipe) use ($key) {
+                $pipe->multi();               
+                $pipe->zrem('_queue', $key);
+                $pipe->exec();
+            });
+        } while(!empty($result[2]) && --$tries);
+
+        if (empty($result[2]) || empty($result[1])) {
             return false;
         }
         
-        $key = $result;
-        
-        $result = $this->predis->pipeline(function($pipe) use ($key) {
+        $result = $this->predis->pipeline(function($pipe) use ($key, $workerId) {
             $pipe->set($key.':queue_worker_id', $workerId);
 
             $pipe->mget(array(
@@ -210,7 +229,7 @@ class Redis implements ConnectionInterface
         }
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array(), $priority = 50)
     {
         if ($key === true) {
             $key = 'temp_'.md5(microtime(true).rand(10000,99999));
@@ -242,7 +261,7 @@ class Redis implements ConnectionInterface
                        $key.':queue_tags' => serialize($tags),
                        $key.':temp' => $temp
                 ));
-                $pipe->sadd('_queue', $key);
+                $pipe->zadd('_queue', array($key => $priority));
                 $pipe->exec();
             });
             return $result && !empty($result[3]);
@@ -288,7 +307,7 @@ class Redis implements ConnectionInterface
 
     public function getQueueCount()
     {
-        return $this->predis->scard('_queue');
+        return $this->predis->zcard('_queue');
     }
     
     public function remove($key, $force = false, $persistent = null)
@@ -329,7 +348,7 @@ class Redis implements ConnectionInterface
                        $key.':tags',
                        $key.':temp' 
                 ));
-                $pipe->srem('_queue', $key);
+                $pipe->zrem('_queue', $key);
                 foreach ($tags as $tag) {
                     $pipe->srem('_tag:'.$tag, $key);
                 }
@@ -373,7 +392,7 @@ class Redis implements ConnectionInterface
                            $key.':tags',
                            $key.':temp'
                     ));
-                    $pipe->srem('_queue', $key);
+                    $pipe->zrem('_queue', $key);
                     foreach ($tags as $tag) {
                         $pipe->srem('_tag:'.$tag, $key);
                     }
@@ -402,7 +421,7 @@ class Redis implements ConnectionInterface
                            $key.':tags',
                            $key.':temp'
                     ));
-                    $pipe->srem('_queue', $key);
+                    $pipe->zrem('_queue', $key);
                     foreach ($tags as $tag) {
                         $pipe->srem('_tag:'.$tag, $key);
                     }
@@ -477,7 +496,7 @@ class Redis implements ConnectionInterface
                     $pipe->del('_tag:'.$tag);
                 }
                 $pipe->del($entriesToRemove);
-                $pipe->srem('_queue', $keysToRemove);
+                $pipe->zrem('_queue', $keysToRemove);
                 $pipe->exec();
             });
             
@@ -510,7 +529,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove, $tags) {
                 $pipe->multi();
                 $pipe->del($entriesToRemove);
-                $pipe->srem('_queue', $keysToRemove);
+                $pipe->zrem('_queue', $keysToRemove);
                 foreach ($tags as $tag) {
                     $pipe->srem('_tag:'.$tag, $keysToRemove);
                 }
@@ -528,9 +547,7 @@ class Redis implements ConnectionInterface
             
             if (empty($result)) {
                 return false;
-            }
-            
-            $now = time();
+            }            
             
             $entriesToRemove = array();
             $keysToRemove = array();
@@ -552,7 +569,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove, $tags) {
                 $pipe->multi();
                 $pipe->del($entriesToRemove);
-                $pipe->srem('_queue', $keysToRemove);
+                $pipe->zrem('_queue', $keysToRemove);
                 foreach ($tags as $tag) {
                     $pipe->srem('_tag:'.$tag, $keysToRemove);
                 }
@@ -607,7 +624,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove) {
                 $pipe->multi();
                 $pipe->del($entriesToRemove);
-                $pipe->srem('_queue', $keysToRemove);
+                $pipe->zrem('_queue', $keysToRemove);
                 $pipe->exec();
             });
             return !empty($result[3]);
@@ -623,8 +640,6 @@ class Redis implements ConnectionInterface
             if (empty($result)) {
                 return false;
             }
-            
-            $now = time();
             
             $entriesToRemove = array();
             $keysToRemove = array();
@@ -647,7 +662,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove) {
                 $pipe->multi();
                 $pipe->del($entriesToRemove);
-                $pipe->srem('_queue', $keysToRemove);
+                $pipe->zrem('_queue', $keysToRemove);
                 $pipe->exec();
             });
             return !empty($result[3]);
@@ -806,7 +821,6 @@ class Redis implements ConnectionInterface
             }
             
             $result = $this->predis->pipeline(function($pipe) use ($freshUntilKeys, $result, $persistent, $tags) {
-                $now = time();
                 $entriesToOutdate = array();
                 foreach ($freshUntilKeys as $k => $v) {
                     if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
@@ -875,8 +889,6 @@ class Redis implements ConnectionInterface
             if (empty($result)) {
                 return false;
             }
-            
-            $now = time();
             
             $entriesToOutdate = array();
             foreach ($freshUntilKeys as $k => $v) {

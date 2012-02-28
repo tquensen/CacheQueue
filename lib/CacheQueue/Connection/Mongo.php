@@ -32,6 +32,7 @@ class Mongo implements ConnectionInterface
         $this->collection->ensureIndex(array('persistent' => 1), array('safe' => true));
         $this->collection->ensureIndex(array('queue_persistent' => 1), array('safe' => true));
         $this->collection->ensureIndex(array('tags' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('queue_priority' => 1), array('safe' => true));
     }
 
     public function get($key)
@@ -71,6 +72,7 @@ class Mongo implements ConnectionInterface
         $result = $this->db->command(array(
             'findAndModify' => $this->collectionName,
             'query' => array('queued' => true),
+            'sort' => array('queue_priority' => 1),
             'update' => array('$set' => array('queued' => false))
         ));
         
@@ -95,18 +97,25 @@ class Mongo implements ConnectionInterface
     
     public function updateJobStatus($key, $workerId)
     {
-        return (bool) $this->collection->update(
-                array(
-                    '_id' => $key,
-                    'queued' => $workerId
-                ),
-                array('$set' => array(
-                    'queue_fresh_until' => new \MongoDate(0),
-                    'queue_persistent' => false,
-                    'queued' => false
-                )),
-                array('safe' => $this->safe)
-            );
+        try {
+            return (bool) $this->collection->update(
+                    array(
+                        '_id' => $key,
+                        'queued' => $workerId
+                    ),
+                    array('$set' => array(
+                        'queue_fresh_until' => new \MongoDate(0),
+                        'queue_persistent' => false,
+                        'queued' => false
+                    )),
+                    array('safe' => $this->safe)
+                );
+        }  catch (\MongoCursorException $e) {
+            if ($e->getCode() == 11000) {
+                return false;
+            }
+            throw $e;
+        }
     }
     
     public function set($key, $data, $freshFor, $force = false, $tags = array())
@@ -166,7 +175,7 @@ class Mongo implements ConnectionInterface
         
     }
 
-    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array())
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array(), $priority = 50)
     {
         if ($key === true) {
             $key = 'temp_'.md5(microtime(true).rand(10000,99999));
@@ -200,7 +209,8 @@ class Mongo implements ConnectionInterface
                         'queued' => true,
                         'task' => $task,
                         'params' => $params,
-                        'temp' => $temp
+                        'temp' => $temp,
+                        'queue_priority' => $priority
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
@@ -238,7 +248,8 @@ class Mongo implements ConnectionInterface
                         'queued' => true,
                         'task' => $task,
                         'params' => $params,
-                        'temp' => $temp
+                        'temp' => $temp,
+                        'queue_priority' => $priority
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );

@@ -44,9 +44,10 @@ interface ConnectionInterface
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
      * @param bool $force true to force the queue even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
+     * @param int $priority the execution priority of the queued job, 0=high prio/early execution, 100=low prio/late execution
      * @return bool if the queue was sucessful 
      */
-    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array());
+    public function queue($key, $task, $params, $freshFor, $force = false, $tags = array(), $priority = 50);
     
     /**
      * gets a queued entry and removes it from queue

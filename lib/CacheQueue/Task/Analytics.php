@@ -57,12 +57,24 @@ class Analytics
         $dateFrom = '2005-01-01';
         $dateTo = date('Y-m-d');
         
-        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
-            'dimensions' => 'ga:pagePath',
-            'sort' => '-ga:pageviews',
-            'max-results' => 50,
-            'filters' => $hostStr.'ga:pagePath'.$op.$path
-        ));
+        $tries = 3;
+        while(true) {
+            try {    
+                $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+                    'dimensions' => 'ga:pagePath',
+                    'sort' => '-ga:pageviews',
+                    'max-results' => 50,
+                    'filters' => $hostStr.'ga:pagePath'.$op.$path
+                ));
+                break;
+            } catch (\Exception $e) {
+                if (!--$tries) {
+                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                }
+                usleep(50000);
+            }
+        };
+        
         
         $count = $data['totalsForAllResults']['ga:pageviews'];
         
@@ -100,16 +112,27 @@ class Analytics
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
         
-        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
-            'dimensions' => 'ga:pagePath',
-            'sort' => '-ga:pageviews',
-            'max-results' => $limit,
-            'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
-        ));
+        $tries = 3;
+        while(true) {
+            try {  
+                $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+                    'dimensions' => 'ga:pagePath',
+                    'sort' => '-ga:pageviews',
+                    'max-results' => $limit,
+                    'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
+                ));
+                break;
+            } catch (\Exception $e) {
+                if (!--$tries) {
+                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                }
+                usleep(50000);
+            }
+        }
         
         $topUrlsTmp = array();
 
-        foreach($data['rows'] as $row) {
+        foreach ($data['rows'] as $row) {
             $title = (string)$row[0];
             $count = (int)$row[1];
 
@@ -160,12 +183,23 @@ class Analytics
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : date('Y-m-d',  mktime(0, 0, 0, date('m')-1, date('d'), date('Y')));
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
 
-        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
-            'dimensions' => 'ga:keyword',
-            'sort' => '-ga:pageviews',
-            'max-results' => $limit,
-            'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
-        ));
+        $tries = 3;
+        while(true) {
+            try {  
+                $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
+                    'dimensions' => 'ga:keyword',
+                    'sort' => '-ga:pageviews',
+                    'max-results' => $limit,
+                    'filters' => $hostStr.'ga:pagePath=~^'.$params['pathPrefix']
+                ));
+                break;
+            } catch (\Exception $e) {
+                if (!--$tries) {
+                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                }
+                usleep(50000);
+            }
+        }
         
         $topKeywordsTmp = array();
 
@@ -209,7 +243,20 @@ class Analytics
                         if ($logger) {
                             $logger->logDebug('Analytics: refreshing access token');
                         }
-                        $client->refreshToken($refresh_token);
+                                            
+                        $tries = 3;
+                        while(true) {
+                            try {
+                                $client->refreshToken($refresh_token);
+                                break;
+                            } catch (\Exception $e) {
+                                if (!--$tries) {
+                                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                                }
+                                usleep(50000);
+                            }
+                        }
+                        
                         $tmpToken = $client->getAccessToken();     
                         $tmp = json_decode($tmpToken, true);
                         $tmp['refresh_token'] = $refresh_token;
