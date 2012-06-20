@@ -38,7 +38,7 @@ class Misc
         }
         
         if ($result === false) {
-            if (!empty($params['disableErrorLog']) && $logger = $worker->getLogger()) {
+            if (empty($params['disableErrorLog']) && $logger = $worker->getLogger()) {
                 $logger->logError('loadUrl: failed for URL '.$params['url']);
             }
             return;
@@ -47,7 +47,7 @@ class Misc
         if (!empty($params['format']) && $params['format'] == 'json') {
             $result = @json_decode($result, true);
             if ($result === null) {
-                if (!empty($params['disableErrorLog']) && $logger = $worker->getLogger()) {
+                if (empty($params['disableErrorLog']) && $logger = $worker->getLogger()) {
                     $logger->logError('loadUrl: failed to convert data to json for URL '.$params['url']);
                 }
                 return;
