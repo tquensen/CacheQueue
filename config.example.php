@@ -31,6 +31,7 @@ $config = array();
      *   'url' => 'the absolute URL (or anything which is readable by fopen) to get the content from (see http://www.php.net/manual/en/wrappers.php)'
      *   'context' => '(optional), an array of context options to use or false/null to nut use a context (see http://www.php.net/manual/en/function.stream-context-create.php)'
      *   'format' => '(optional), only valid option is json - when set, the response is processed by json_decode before saved'
+     *   'disableErrorLog' => (optional) true to not log errors (url not found, 404 error, ..)
      */
     $config['tasks']['loadurl'] = array('\\CacheQueue\\Task\\Misc', 'loadUrl');
 

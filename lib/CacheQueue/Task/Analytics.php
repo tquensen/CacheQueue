@@ -16,8 +16,8 @@ class Analytics
 
         $client = new \apiClient();
         $client->setApplicationName("t3n.de");
-        $client->setClientId('240342825658.apps.googleusercontent.com');
-        $client->setClientSecret('cPSMZAKd0U5raQ4K6r42GyTt');
+        $client->setClientId($clientKey);
+        $client->setClientSecret($clientSecret);
         
         $service = new \apiAnalyticsService($client);
         
