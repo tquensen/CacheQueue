@@ -49,12 +49,62 @@ class Mongo implements ConnectionInterface
         $return['persistent'] = !empty($result['persistent']);
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
 
+        $return['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until']->sec : 0;
+        $return['queue_persistent'] = !empty($result['queue_persistent']);
         $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
         $return['tags'] = isset($result['tags']) ? $result['tags'] : array();
-        //$return['task'] = !empty($result['task']) ? $result['task'] : null;
-        //$return['params'] = !empty($result['params']) ? $result['params'] : null;
+        $return['task'] = !empty($result['task']) ? $result['task'] : null;
+        $return['params'] = !empty($result['params']) ? $result['params'] : null;
         $return['data'] = isset($result['data']) ? $result['data'] : false;
 
+        return $return;
+    }
+    
+    public function getByTag($tag, $onlyFresh = false)
+    {
+        $tags = array_values((array) $tag);
+        $return = array();
+        
+        if ($onlyFresh) {
+            $results = $this->collection->find(
+                array(
+                    'tags' => array('$in' => $tags),
+                    '$or' => array(
+                        array(
+                            'fresh_until' => array('$gte' => new \MongoDate())
+                        ),
+                        array(
+                            'persistent' => true
+                        )
+                    )
+                )
+            );
+        } else {
+            $results = $this->collection->find(
+                array(
+                    'tags' => array('$in' => $tags)
+                )
+            );
+        }
+        
+        foreach ($results as $result) {
+            $entry = array();
+            $entry['key'] = $result['_id'];
+            //$entry['queued'] = !empty($result['queued']);
+            $entry['fresh_until'] = !empty($result['fresh_until']) ? $result['fresh_until']->sec : 0;
+            $entry['persistent'] = !empty($result['persistent']);
+            $entry['is_fresh'] = $entry['persistent'] || $entry['fresh_until'] > time();
+
+            $entry['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until']->sec : 0;
+            $entry['queue_persistent'] = !empty($result['queue_persistent']);
+            $entry['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
+            $entry['tags'] = isset($result['tags']) ? $result['tags'] : array();
+            $entry['task'] = !empty($result['task']) ? $result['task'] : null;
+            $entry['params'] = !empty($result['params']) ? $result['params'] : null;
+            $entry['data'] = isset($result['data']) ? $result['data'] : false;
+            $return[] = $entry;
+        }
+        
         return $return;
     }
     
@@ -73,7 +123,7 @@ class Mongo implements ConnectionInterface
             'findAndModify' => $this->collectionName,
             'query' => array('queued' => true),
             'sort' => array('queue_priority' => 1),
-            'update' => array('$set' => array('queued' => false))
+            'update' => array('$set' => array('queued' => $workerId))
         ));
         
         if (empty($result['ok']) || empty($result['value'])) {
@@ -380,10 +430,14 @@ class Mongo implements ConnectionInterface
                     array(
                         '_id' => $key,
                         'fresh_until' => array('$gt' => new \MongoDate()),
-                        'persistent' => false
+                        'persistent' => false,
                     ),
                     array('$set' => array(
-                        'fresh_until' => new \MongoDate(time() - 1)
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe)
                 );
@@ -396,7 +450,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe)
                 );
@@ -407,7 +464,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe)
                 );
@@ -427,7 +487,11 @@ class Mongo implements ConnectionInterface
                         'tags' => array('$in' => $tags)
                     ),
                     array('$set' => array(
-                        'fresh_until' => new \MongoDate(time() - 1)
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -440,7 +504,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -451,7 +518,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -469,7 +539,11 @@ class Mongo implements ConnectionInterface
                         'persistent' => false
                     ),
                     array('$set' => array(
-                        'fresh_until' => new \MongoDate(time() - 1)
+                        'fresh_until' => new \MongoDate(time() - 1),
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -481,7 +555,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );
@@ -491,7 +568,10 @@ class Mongo implements ConnectionInterface
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
-                        'persistent' => false
+                        'persistent' => false,
+                        'queue_fresh_until' => new \MongoDate(time() - 1),
+                        'queue_persistent' => false,
+                        'queued' => false
                     )),
                     array('safe' => $this->safe, 'multiple' => true)
                 );

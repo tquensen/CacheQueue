@@ -21,6 +21,8 @@ class Dummy implements ConnectionInterface
         return false;
     }
     
+    
+    
     public function getValue($key, $onlyFresh = false)
     {
         return false;
@@ -89,6 +91,11 @@ class Dummy implements ConnectionInterface
     public function removeByTag($tag, $force = false, $persistent = null)
     {
         return false;
+    }
+
+    public function getByTag($key, $onlyFresh = false)
+    {
+        return array();
     }
     
 }

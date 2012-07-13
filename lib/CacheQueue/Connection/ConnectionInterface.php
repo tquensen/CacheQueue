@@ -9,10 +9,18 @@ interface ConnectionInterface
      * get a cached entry
      * 
      * @param string $key the key to get
-     * @param bool $onlyValue true to return only the value, false to return the result array
      * @return mixed the value or the result array (depending on $onlyValue) or false if not found 
      */
     public function get($key);
+    
+    /**
+     * get multiple cached entries by a tag
+     * 
+     * @param string $tag the key to get
+     * @param bool $onlyFresh true to return only fresh entries, false (default) to return also outdated entries
+     * @return array an array of cache entries
+     */
+    public function getByTag($key, $onlyFresh = false);
     
     /**
      * get a cached entries value

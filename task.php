@@ -69,16 +69,32 @@ try {
 
     switch (strtolower($_SERVER['argv'][1])) {
         case 'get':      
-            $data = $connection->get($key);
-            if (!$data) {
-                echo 'Cache entry "'.$key.'" not found'."\n";
+            if (trim(strtolower($key)) == 'tag') {
+                $results = $connection->getByTag($tag, $force ? false : true);
+                 echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
+                 foreach ($results as $data) {
+                    echo "\n".'Data for entry "'.$data['key'].'":'."\n";
+                    echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
+                    echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
+                    echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
+                    echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
+                    echo "\t".'queue fresh until: '.($data['queue_persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['queue_fresh_until']))."\n";
+                    echo "\t".'data:       '.print_r($data['data'], true)."\n";
+                }     
             } else {
-                echo 'Data for entry "'.$key.'":'."\n";
-                echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
-                echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
-                echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
-                echo "\t".'data:       '.$data['data']."\n";
-            }           
+                $data = $connection->get($key);
+                if (!$data) {
+                    echo 'Cache entry "'.$key.'" not found'."\n";
+                } else {
+                    echo 'Data for entry "'.$key.'":'."\n";
+                    echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
+                    echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
+                    echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
+                    echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
+                    echo "\t".'queue fresh until: '.($data['queue_persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['queue_fresh_until']))."\n";
+                    echo "\t".'data:       '.print_r($data['data'], true)."\n";
+                }     
+            }
             break;
         case 'remove':      
             if (trim(strtolower($key)) == 'all') {

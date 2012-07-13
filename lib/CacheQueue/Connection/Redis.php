@@ -12,8 +12,8 @@ class Redis implements ConnectionInterface
         '{key}:presistent' => 0,
         '{key}:queue_fresh_until' => 0,
         '{key}:queue_persistent' => 0,
-        //'{key}:task' => '',
-        //'{key}:params' => '',
+        '{key}:task' => '',
+        '{key}:params' => '',
         '{key}:tags' => array()
     );
     
@@ -50,19 +50,108 @@ class Redis implements ConnectionInterface
         $return['persistent'] = !empty($result[2]);
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
 
+        $return['queue_fresh_until'] = !empty($result[3]) ? $result[3] : 0;
+        $return['queue_persistent'] = !empty($result[4]);
         $return['queue_is_fresh'] = !empty($result[4]) || (!empty($result[3]) && $result[3] > time());
 
-        $return['tags'] = !empty($result[5]) ? unserialize($result[5]) : array();
-        //$return['task'] = !empty($result['task']) ? $result['task'] : null;
-        //$return['params'] = !empty($result['params']) ? $result['params'] : null;
+        $return['tags'] = !empty($result[7]) ? unserialize($result[7]) : array();
+        $return['task'] = !empty($result[5]) ? $result[5] : null;
+        $return['params'] = !empty($result[6]) ? $result[6] : null;
         $return['data'] = !empty($result[0]) ? unserialize($result[0]) : false;
 
         return $return;
     }
     
+    public function getByTag($tag, $onlyFresh = false)
+    {
+        $tags = array_values((array) $tag);
+        $fixedKeys = array();
+        foreach ($tags as $tag) {
+            $fixedKeys = array_merge($fixedKeys, $this->predis->smembers($tag));
+        }
+        $fixedKeys = array_unique($fixedKeys);
+        $reallyFixedKeys = array();
+        $entryTags = array();
+        foreach ($fixedKeys as $entryTag) {
+            $entryTags[$entryTag] = $entryTag.':tags';
+        }
+        $entryTagsKeys = array_keys($entryTags);
+        $entryTagsData = $this->predis->mget(array_values($entryTags));
+        foreach ($entryTagsKeys as $k => $v) {
+            if ($entryTagsData[$k] && $entryTagsArray = unserialize($entryTagsData[$k])) {
+                foreach ($tags as $tag) {
+                    if (in_array($tag, $entryTagsArray)) {
+                        $reallyFixedKeys[] = $v;
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        $fixedKeys = $reallyFixedKeys;
+        foreach ($fixedKeys as $key) {
+            $data[] = $key.':data';
+            $data[] = $key.':fresh_until';
+            $data[] = $key.':persistent';
+            $data[] = $key.':queue_fresh_until';
+            $data[] = $key.':queue_persistent';
+            $data[] = $key.':task';
+            $data[] = $key.':params';
+            $data[] = $key.':tags';
+        }                
+        $results = $this->predis->mget($entriesToOutdate);
+        
+        $return = array();
+
+        if (!$results) {
+            return array();
+        }
+        
+        foreach ($fixedKeys as $k => $key) {
+            $entry = array();
+            $i = $k * 8;
+            if (empty($results[$i+7]) || !($entryTagsArray = unserialize($results[$i+7]))) {
+                continue;
+            }
+            $found = false;
+            foreach ($tags as $tag) {
+                if (in_array($tag, $entryTagsArray)) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                continue;
+            }
+            
+            if ($onlyFresh && !($results[$i+2] || ($results[$i+1] && $results[$i+1] > time()))) {
+                continue;
+            }
+            $entry['key'] = $key;
+            //$return['queued'] = !empty($result['queued']);
+            $entry['fresh_until'] = !empty($results[$i+1]) ? $results[$i+1] : 0;
+            $entry['persistent'] = !empty($results[$i+2]);
+            $entry['is_fresh'] = $entry['persistent'] || $entry['fresh_until'] > time();
+
+            $entry['queue_fresh_until'] = !empty($results[$i+3]) ? $results[$i+3] : 0;
+            $entry['queue_persistent'] = !empty($results[$i+4]);
+            $entry['queue_is_fresh'] = !empty($results[$i+4]) || (!empty($results[$i+3]) && $results[$i+3] > time());
+
+            $entry['tags'] = !empty($results[$i+7]) ? unserialize($results[$i+7]) : array();
+            $entry['task'] = !empty($results[$i+5]) ? $results[$i+5] : null;
+            $entry['params'] = !empty($results[$i+6]) ? $results[$i+6] : null;
+            $entry['data'] = !empty($results[$i+0]) ? unserialize($results[$i+0]) : false;
+            
+            $return[] = $entry;
+        }
+
+        return $return;
+    }
+    
+    
     public function getValue($key, $onlyFresh = false)
     {
-        $result = $this->connection->get($key);
+        $result = $this->get($key);
         if (!$result || empty($result['data'])) {
             return false;
         }
@@ -440,7 +529,7 @@ class Redis implements ConnectionInterface
         foreach ($tags as $tag) {
             $fixedKeys = array_merge($fixedKeys, $this->predis->smembers('_tag:'.$tag));
         }
-        
+        $fixedKeys = array_unique($fixedKeys);
         $reallyFixedKeys = array();
         $entryTags = array();
         foreach ($fixedKeys as $entryTag) {
@@ -694,8 +783,12 @@ class Redis implements ConnectionInterface
                 $pipe->multi();
                 $pipe->mset(array(
                        $key.':fresh_until' => 0,
-                       $key.':persistent' => 0
+                       $key.':persistent' => 0,
+                       $key.':queue_fresh_until' => 0,
+                       $key.':queue_persistent' => 0,
+                       $key.':queue_worker_id' => 0
                 ));
+                $pipe->zrem('_queue', $key);
                 $pipe->exec();
             });
 
@@ -723,8 +816,12 @@ class Redis implements ConnectionInterface
                     $pipe->multi();
                     $pipe->mset(array(
                            $key.':fresh_until' => 0,
-                           $key.':persistent' => 0
+                           $key.':persistent' => 0,
+                           $key.':queue_fresh_until' => 0,
+                           $key.':queue_persistent' => 0,
+                           $key.':queue_worker_id' => 0
                     ));
+                    $pipe->zrem('_queue', $key);
                     $pipe->exec();
                 });
 
@@ -732,8 +829,11 @@ class Redis implements ConnectionInterface
             } else {
                 return (bool) $this->predis->mset(array(
                        $key.':fresh_until' => 0,
-                       $key.':persistent' => 0
-                ));
+                       $key.':persistent' => 0,
+                       $key.':queue_fresh_until' => 0,
+                       $key.':queue_persistent' => 0,
+                       $key.':queue_worker_id' => 0
+                )) && $this->predis->zrem('_queue', $key);
             }
         }
     }
@@ -743,9 +843,9 @@ class Redis implements ConnectionInterface
         $tags = array_values((array) $tag);
         $fixedKeys = array();
         foreach ($tags as $tag) {
-            $fixedKeys = array_marge($fixedKeys, $this->predis->smembers($tag));
+            $fixedKeys = array_merge($fixedKeys, $this->predis->smembers($tag));
         }
-        
+        $fixedKeys = array_unique($fixedKeys);
         $reallyFixedKeys = array();
         $entryTags = array();
         foreach ($fixedKeys as $entryTag) {
@@ -780,8 +880,11 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($fixedKeys, $tags) {
                 $entriesToOutdate = array();
                 foreach ($fixedKeys as $v) {
-                    $entriesToOutdate[$v.':persistent'] = true;
-                    $entriesToOutdate[$v.':fresh_until'] = true;
+                    $entriesToOutdate[$v.':persistent'] = 0;
+                    $entriesToOutdate[$v.':fresh_until'] = 0;
+                    $entriesToOutdate[$v.':queue_persistent'] = 0;
+                    $entriesToOutdate[$v.':queue_fresh_until'] = 0;
+                    $entriesToOutdate[$v.':queue_worker_id'] = 0;
                 }                
                 $pipe->mset($entriesToOutdate);
                 $pipe->exec();
@@ -800,6 +903,9 @@ class Redis implements ConnectionInterface
                     if ($matchingEntries[$k] == $persistent) {
                         $entriesToOutdate[$v.':fresh_until'] = 0;
                         $entriesToOutdate[$v.':persistent'] = 0;
+                        $entriesToOutdate[$v.':queue_persistent'] = 0;
+                        $entriesToOutdate[$v.':queue_fresh_until'] = 0;
+                        $entriesToOutdate[$v.':queue_worker_id'] = 0;
                     }
                 }
                 $pipe->mset($entriesToOutdate);
@@ -826,6 +932,9 @@ class Redis implements ConnectionInterface
                     if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
                         $entriesToOutdate[] = $v.':fresh_until';
                         $entriesToOutdate[] = $v.':persistent';
+                        $entriesToOutdate[] = $v.':queue_persistent';
+                        $entriesToOutdate[] = $v.':queue_fresh_until';
+                        $entriesToOutdate[] = $v.':queue_worker_id';
                     }
                 }
                 $pipe->mset($entriesToOutdate);
@@ -853,12 +962,18 @@ class Redis implements ConnectionInterface
         if ($force && $persistent === null) {
             $entriesToOutdate = array();
             foreach ($entries['fresh_until'] as $k => $v) {
-                $entriesToOutdate[$k.':persistent'] = true;
-                $entriesToOutdate[$k.':fresh_until'] = true;
+                $entriesToOutdate[$k.':persistent'] = 0;
+                $entriesToOutdate[$k.':fresh_until'] = 0;
+                $entriesToOutdate[$k.':queue_persistent'] = 0;
+                $entriesToOutdate[$k.':queue_fresh_until'] = 0;
+                $entriesToOutdate[$k.':queue_worker_id'] = 0;
             }
             foreach ($entries['persistent'] as $k => $v) {
                 $entriesToOutdate[$k.':persistent'] = 0;
                 $entriesToOutdate[$k.':fresh_until'] = 0;
+                $entriesToOutdate[$k.':queue_persistent'] = 0;
+                $entriesToOutdate[$k.':queue_fresh_until'] = 0;
+                $entriesToOutdate[$k.':queue_worker_id'] = 0;
             }
             return (bool) $this->predis->mset($entriesToOutdate);
         }
@@ -874,6 +989,9 @@ class Redis implements ConnectionInterface
                 if ($matchingEntries[$k] == $persistent) {
                     $entriesToOutdate[$v.':fresh_until'] = 0;
                     $entriesToOutdate[$v.':persistent'] = 0;
+                    $entriesToOutdate[$k.':queue_persistent'] = 0;
+                    $entriesToOutdate[$k.':queue_fresh_until'] = 0;
+                    $entriesToOutdate[$k.':queue_worker_id'] = 0;
                 }
             }
             return $this->predis->mset($entriesToOutdate);
@@ -895,6 +1013,9 @@ class Redis implements ConnectionInterface
                 if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
                     $entriesToOutdate[] = $v.':fresh_until';
                     $entriesToOutdate[] = $v.':persistent';
+                    $entriesToOutdate[] = $v.':queue_persistent';
+                    $entriesToOutdate[] = $v.':queue_fresh_until';
+                    $entriesToOutdate[] = $v.':queue_worker_id';
                 }
             }
             return $this->predis->mset($entriesToOutdate);

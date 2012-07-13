@@ -94,12 +94,51 @@ $config = array();
      *   'refreshToken' => 'the oAuth2 refresh token'
      *   'profileId' => 'the Google Analytics profile ID'
      *   'operator' => 'the filter operator (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
+     *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
+     *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
      * 
      * options:
      *   'clientKey' => 'the client key'
      *   'clientSecret' => 'the client secret'
      */
     $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret'
+    ));
+    
+    /*
+     * oAuth2 / API v3 version!
+     * 
+     * get analytics eventdata (count and score) of a specific event
+     * you need a registered oAuth2 application on the server/task side,
+     * and an Analytics Account and a refresh token on the client side
+     * 
+     * this task requires the Google api client library in your include_path!
+     * 
+     * register your oAuth2 application here to get a consumerKey/Secret
+     * https://code.google.com/apis/console/
+     * 
+     * You can retrieve a refresh token here:
+     * https://code.google.com/oauthplayground/
+     * first, click the configuration button, check "Use your own OAuth credentials"
+     * and add your client ID/secret, then
+     * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+     * use the refresh token on the client side when queueing the analytics task
+     * 
+     * params:
+     * an array with
+     *   'eventCategory' => 'the event category'
+     *   'eventAction' => 'the event action'
+     *   'refreshToken' => 'the oAuth2 refresh token'
+     *   'profileId' => 'the Google Analytics profile ID'
+     *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
+     *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
+     * 
+     * options:
+     *   'clientKey' => 'the client key'
+     *   'clientSecret' => 'the client secret'
+     */
+    $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEventData', array(
         'clientKey' => 'yourkey.apps.googleusercontent.com',
         'clientSecret' => 'YourClientSecret'
     ));

@@ -54,8 +54,8 @@ class Analytics
         
         $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
-        $dateFrom = '2005-01-01';
-        $dateTo = date('Y-m-d');
+        $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
+        $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
         
         $tries = 3;
         while(true) {
@@ -84,6 +84,57 @@ class Analytics
 
         
         return (int) $count;
+    }
+    
+    public function getEventData($params, $config, $job, $worker)
+    {
+        if (empty($config['clientKey']) || empty($config['clientSecret'])) {
+            throw new \Exception('Config parameters clientKey and clientSecret are required!');
+        }
+        
+        if (empty($params['eventCategory']) || empty($params['eventAction']) || empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters eventCategory, eventAction, profileId and refreshToken are required!');
+        }
+        
+        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+        
+        $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
+        $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
+        
+        $tries = 3;
+        while(true) {
+            try {    
+                $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:totalEvents,ga:eventValue', array(
+                    'dimensions' => 'ga:eventCategory,ga:eventAction',
+                    'max-results' => 50,
+                    'filters' => 'ga:eventCategory=='.$params['eventCategory'].';ga:eventAction=='.$params['eventAction']
+                ));
+                break;
+            } catch (\Exception $e) {
+                if (!--$tries) {
+                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                }
+                usleep(50000);
+            }
+        };
+        
+        
+        $numEvents = $data['totalsForAllResults']['ga:totalEvents'];
+        $scoreEvents = $data['totalsForAllResults']['ga:eventValue'];
+        
+        if ($logger = $worker->getLogger()) {
+            $logger->logDebug('Analytics EventData: '.$params['eventCategory'].':'.$params['eventAction'].' | COUNT='.$numEvents.' | SCORE='.$scoreEvents);
+        }
+
+        
+        return array(
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'eventCategory' => $params['eventCategory'],
+            'eventAction' => $params['eventAction'],
+            'count' => $numEvents,
+            'score' => $scoreEvents
+        );
     }
     
     public function getTopUrls($params, $config, $job, $worker)
