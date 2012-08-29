@@ -62,6 +62,7 @@ class Basic implements WorkerInterface
     //        }
 
             $result = $task->$taskMethod($params, $taskConfig, $job, $this);
+            unset($task);
 
             if ($temp) {
                 $this->connection->remove($job['key'], true);

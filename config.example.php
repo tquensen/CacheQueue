@@ -241,6 +241,45 @@ $config = array();
     ));
     
     /*
+     * run an SQL query (using PDO)
+     * 
+     * if the 'return' parameter is not defined, the task returns true on success or false on failure
+     * for return = 'rowCount', returns the number of rows affected by the last DELETE, INSERT, or UPDATE statement
+     * for return = 'column', returns a single column
+     * for return = 'row', returns a row column
+     * for return = 'all', returns all rows as array
+     * 
+     * params:
+     * an array with
+     *   'query' => 'a valid SQL statement' (can contain placeholders)
+     *   'parameter' => an array with the placeholder values (optional)
+     *   'return' => rowCount, column, row or all (optional)
+     *   'fetchStyle' => only for return = 'row' or return = 'all', the PDO::FETCH_STYLE (optional, default = PDO::FETCH_ASSOC)
+     *   'fetchArgument' => only for return = 'all' and certain fetchStyles (optional, see http://www.php.net/manual/de/pdostatement.fetchall.php)
+     *   'column' => only for return = 'column', the column number to return (optional, default = 0)
+     * 
+     *   'dns' => 'a valid PDO DNS' (optional, overwrites the config-dns, see http://www.php.net/manual/de/pdo.connections.php)
+     *   'user' => 'username for the sql user' (optional, overwrites the config-user), 
+     *   'pass' => 'password for the sql user' (optional, overwrites the config-pass, 
+     *   'options' => 'additional driver options' (optional, overwrites the config-options)
+     *   
+     *   
+     * 
+     * options:
+     * an array with
+     *   'dns' => 'a valid PDO DNS' (see http://www.php.net/manual/de/pdo.connections.php)
+     *   'user' => 'username for the sql user'
+     *   'pass' => 'password for the sql user'
+     *   'options' => 'additional driver options' (optional)
+     */
+    $config['tasks']['pdo'] = array('\\CacheQueue\\Task\\PDO', 'execute', array(
+        'dns' => 'mysql:host=localhost;dbname=test',
+        'user' => 'root',
+        'pass' => 'rootpass',
+        'options' => array()
+    ));
+    
+    /*
      * this is an fully featured example of a task declaration
      * copy&paste this for your own tasks ;)
      * 

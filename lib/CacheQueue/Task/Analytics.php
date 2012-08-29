@@ -71,7 +71,7 @@ class Analytics
                 if (!--$tries) {
                     throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
                 }
-                usleep(50000);
+                usleep(rand(300000,500000)+pow(3-$tries,2)*1000000);
             }
         };
         
