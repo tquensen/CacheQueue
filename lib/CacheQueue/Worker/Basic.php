@@ -57,10 +57,6 @@ class Basic implements WorkerInterface
             }
 
             $task = new $taskClass;     
-    //        if (!$task instanceof \CacheQueue\ITask) {
-    //            throw new \Exception('class '.$taskClass.' does not implement \\CacheQueue\\ITask.');
-    //        }
-
             $result = $task->$taskMethod($params, $taskConfig, $job, $this);
             unset($task);
 

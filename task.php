@@ -132,8 +132,8 @@ function print_help()
 {
     echo <<<EOF
 Available Tasks:
-    get KEY
-        displays the stored data for the given cache entry
+    get KEY|TAG [tag]
+        displays the stored data for the given cache entry or tag
 
     remove KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
         removes an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) from cache

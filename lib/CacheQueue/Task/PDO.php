@@ -68,5 +68,42 @@ class PDO
             throw new Exception('PDO Query failed: '.$e->getMessage());
         }  
     }
+    
+    public function executeMultiple($params, $config, $job, $worker)
+    {
+        if (empty($params['query']) || !is_array($params['query'])) {
+            throw new \Exception('parameter query is required and must be an array!');
+        }
+        $this->connect($config, $params);
+        $allResults = array();
+        foreach ($params['query'] as $key => $query) {
+            $stmt = $this->pdo->prepare($query);
+            try {
+                $result = $stmt->execute(!empty($params['parameter'][$key]) ? $params['parameter'][$key] : null);
+                $returnType = !empty($params['return'][$key]) ? $params['return'][$key] : false;
+                    
+                    switch ($params['return'][$key]) {
+                        case 'rowCount':
+                            $allResults[$key] = $stmt->rowCount();
+                            break;
+                        case 'row':
+                            $allResults[$key] = $stmt->fetch(!empty($params['fetchStyle'][$key]) ? $params['fetchStyle'][$key] : \PDO::FETCH_ASSOC);
+                            break;
+                        case 'column':
+                            $allResults[$key] = $stmt->fetchColumn(!empty($params['column'][$key]) ? $params['column'][$key] : 0);
+                            break;
+                        case 'all':
+                            $allResults[$key] = $stmt->fetchAll(!empty($params['fetchStyle'][$key]) ? $params['fetchStyle'][$key] : \PDO::FETCH_ASSOC, !empty($params['fetchArgument'][$key]) ? $params['fetchArgument'][$key] : null);
+                            break; 
+                        default:
+                            $allResults[$key] = $result;
+                    }
+            } catch (\PDOException $e) {
+                throw new Exception('PDO Query failed: '.$e->getMessage());
+            }  
+        }
+        
+        return $allResults;
+    }
 
 }

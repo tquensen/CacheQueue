@@ -32,14 +32,16 @@ class Analytics
         return $this->service;
     }
     
-    public function getPageviews($params, $config, $job, $worker)
+    public function getMetric($params, $config, $job, $worker)
     {
+        $metric = !empty($params['metric']) ? $params['metric'] : false;
+        
         if (empty($config['clientKey']) || empty($config['clientSecret'])) {
             throw new \Exception('Config parameters clientKey and clientSecret are required!');
         }
         
-        if (empty($params['pagePath']) || empty($params['profileId']) || empty($params['refreshToken'])) {
-            throw new \Exception('parameters parameters pagePath, profileId and refreshToken are required!');
+        if (!$metric || empty($params['pagePath']) || empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters metric, pagePath, profileId and refreshToken are required!');
         }
         
 //        $url = str_replace(array('https://', 'http://'), '', $params['pagePath']);
@@ -52,38 +54,147 @@ class Analytics
         
         $op = !empty($params['operator']) ? $params['operator'] : '==';
         
-        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
-        
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
-        
-        $tries = 3;
-        while(true) {
-            try {    
-                $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:pageviews', array(
-                    'dimensions' => 'ga:pagePath',
-                    'sort' => '-ga:pageviews',
-                    'max-results' => 50,
-                    'filters' => $hostStr.'ga:pagePath'.$op.$path
-                ));
-                break;
-            } catch (\Exception $e) {
-                if (!--$tries) {
-                    throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
-                }
-                usleep(rand(300000,500000)+pow(3-$tries,2)*1000000);
-            }
-        };
-        
-        
-        $count = $data['totalsForAllResults']['ga:pageviews'];
-        
-        if ($logger = $worker->getLogger()) {
-            $logger->logDebug('Analytics Pageviews: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
-        }
 
+        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+        
+        if (!empty($params['bulkCacheTime'])) {
+            $bulkCacheKey = 'analytics_cache_'.$metric.'_'.md5($params['profileId'].$dateFrom.$dateTo.$hostStr);
+            $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
+            if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
+                $lockKey = $worker->getConnection()->obtainLock($bulkCacheKey, 10, 11);
+                if ($lockKey) {
+                    $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
+                    if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
+                        try {
+                            $startIndex = 1;
+                            $bulkCache = array();                            
+                            do {
+                                $tries = 3;
+                                while(true) {
+                                    try {    
+                                        $extra = array(
+                                            'dimensions' => 'ga:hostname,ga:pagePath',
+                                            'max-results' => 10000,
+                                            'start-index' => $startIndex
+                                        );
+                                        if (!empty($params['hostname'])) {
+                                            $extra['filters'] = 'ga:hostname=='.$params['hostname'];
+                                        }
+                                        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:'.$metric, $extra);
+                                        break;
+                                    } catch (\Exception $e) {
+                                        if (!--$tries) {
+                                            throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                                        }
+                                        usleep(rand(300000,500000)+pow(2,2-$tries)*1000000);
+                                    }
+                                };
+                                $bulkCache = array_merge($bulkCache, $data['rows']);
+                            } while($startIndex - 1 + count($data['rows']) < $data['totalResults'] && $startIndex+=10000);
+                            $worker->getConnection()->set($bulkCacheKey, $bulkCache, $params['bulkCacheTime'], false, array('analytics', 'bulkcache'));
+                            $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
+                            if ($logger = $worker->getLogger()) {
+                                $logger->logDebug('Analytics getMetric ('.$metric.'): created BulkCache with '.count($bulkCache). ' entries');
+                            }
+                        } catch (\Exception $e) {
+                            $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
+                            throw $e;
+                        }
+                    } else {
+                        $worker->getConnection()->releaseLock($key, $lockKey);
+                        $bulkCache = $bulkCacheData['data'];
+                    }
+                } else {
+                    $bulkCache = false;
+                }
+            } else {
+                $bulkCache = $bulkCacheData['data'];
+            }
+            if (empty($bulkCache)) {
+                if ($logger = $worker->getLogger()) {
+                    $logger->logError('Analytics getMetric ('.$metric.') from BulkCache: FAILED (no cache available or empty BulkCache)');
+                }
+                return 0;
+            }
+            $count = 0;
+            switch ($op) {
+                case '!=':
+                    foreach ($bulkCache as $entry) {
+                        if ($entry[1] != $path) $count += (int) $entry[2]; 
+                    }
+                    break;
+                case '=@':
+                    foreach ($bulkCache as $entry) {
+                        if (strpos($entry[1], $path) !== false) $count += (int) $entry[2]; 
+                    }
+                    break;
+                case '!@':
+                    foreach ($bulkCache as $entry) {
+                        if (strpos($entry[1], $path) === false) $count += (int) $entry[2]; 
+                    }
+                    break;
+                case '=~':
+                    foreach ($bulkCache as $entry) {
+                        if (preg_match('/'.str_replace('/','\\/',$path).'/', $entry[1])) $count += (int) $entry[2]; 
+                    }
+                    break;
+                case '!~':
+                    foreach ($bulkCache as $entry) {
+                        if (!preg_match('/'.str_replace('/','\\/',$path).'/', $entry[1])) $count += (int) $entry[2]; 
+                    }
+                    break;
+                default:
+                    foreach ($bulkCache as $entry) {
+                        if ($entry[1] == $path) $count += (int) $entry[2]; 
+                    }
+                    break;
+            }
+            
+            if ($logger = $worker->getLogger()) {
+                $logger->logDebug('Analytics getMetric ('.$metric.') from BulkCache: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
+            }
+        } else {
+            $tries = 3;
+            while(true) {
+                try {    
+                    $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:'.$metric, array(
+                        'dimensions' => 'ga:pagePath',
+                        'sort' => '-ga:'.$metric,
+                        'max-results' => 50,
+                        'filters' => $hostStr.'ga:pagePath'.$op.$path
+                    ));
+                    break;
+                } catch (\Exception $e) {
+                    if (!--$tries) {
+                        throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                    }
+                    usleep(rand(300000,500000)+pow(2,2-$tries)*1000000);
+                }
+            };
+
+
+            $count = $data['totalsForAllResults']['ga:'.$metric];
+
+            if ($logger = $worker->getLogger()) {
+                $logger->logDebug('Analytics getMetric ('.$metric.'): '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
+            }
+        }
         
         return (int) $count;
+    }
+    
+    public function getPageviews($params, $config, $job, $worker)
+    {
+        $params['metric'] = 'pageviews';
+        return $this->getMetric($params, $config, $job, $worker);
+    }
+    
+    public function getVisits($params, $config, $job, $worker)
+    {
+        $params['metric'] = 'visits';
+        return $this->getMetric($params, $config, $job, $worker);
     }
     
     public function getEventData($params, $config, $job, $worker)

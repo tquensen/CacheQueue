@@ -49,6 +49,8 @@ class Mongo implements ConnectionInterface
         $return['persistent'] = !empty($result['persistent']);
         $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
 
+        $return['date_set'] = !empty($result['date_set']) ? $result['date_set']->sec : 0;
+        
         $return['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until']->sec : 0;
         $return['queue_persistent'] = !empty($result['queue_persistent']);
         $return['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
@@ -95,6 +97,8 @@ class Mongo implements ConnectionInterface
             $entry['persistent'] = !empty($result['persistent']);
             $entry['is_fresh'] = $entry['persistent'] || $entry['fresh_until'] > time();
 
+            $return['date_set'] = !empty($result['date_set']) ? $result['date_set']->sec : 0;
+            
             $entry['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until']->sec : 0;
             $entry['queue_persistent'] = !empty($result['queue_persistent']);
             $entry['queue_is_fresh'] = !empty($result['queue_persistent']) || (!empty($result['queue_fresh_until']) && $result['queue_fresh_until']->sec > time());
@@ -104,6 +108,8 @@ class Mongo implements ConnectionInterface
             $entry['data'] = isset($result['data']) ? $result['data'] : false;
             $return[] = $entry;
         }
+        
+        unset($results);
         
         return $return;
     }
@@ -190,7 +196,8 @@ class Mongo implements ConnectionInterface
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data,
-                        'tags' => $tags
+                        'tags' => $tags,
+                        'date_set' => new \MongoDate()
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );
@@ -211,7 +218,8 @@ class Mongo implements ConnectionInterface
                         'fresh_until' => $freshUntil,
                         'persistent' => $persistent,
                         'data' => $data,
-                        'tags' => $tags
+                        'tags' => $tags,
+                        'date_set' => new \MongoDate()
                     )),
                     array('upsert' => true, 'safe' => $this->safe)
                 );

@@ -8,6 +8,9 @@ if (empty($_SERVER['argc'])) {
 //add CacheQueue parent folder to include path
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
 
+//enable PHP 5.3+ garbage collection
+gc_enable();
+
 //define config file
 $configFile = dirname(__FILE__).'/config.php';
 
@@ -60,13 +63,13 @@ do {
             if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
                 $end = microtime(true);
                 $count = $connection->getQueueCount();
-                $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($time, 4,'.','')).'s so far...');
+                $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($time, 4,'.','')).'s so far... (gc:'.gc_collect_cycles().')');
             }             
         } while (true);       
         if ($processed) {
             $end = microtime(true);
             if (!$noticeAfterMoreThanSeconds || ($end - $start > $noticeAfterMoreThanSeconds)) {
-                $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s - ready for new tasks');
+                $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s - ready for new tasks (gc:'.gc_collect_cycles().')');
                 $start = microtime(true);
                 $processed = 0;
                 $errors = 0;

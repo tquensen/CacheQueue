@@ -14,7 +14,8 @@ class Redis implements ConnectionInterface
         '{key}:queue_persistent' => 0,
         '{key}:task' => '',
         '{key}:params' => '',
-        '{key}:tags' => array()
+        '{key}:tags' => array(),
+        '{key}:date_set' => array()
     );
     
     public function __construct($config = array())
@@ -54,6 +55,8 @@ class Redis implements ConnectionInterface
         $return['queue_persistent'] = !empty($result[4]);
         $return['queue_is_fresh'] = !empty($result[4]) || (!empty($result[3]) && $result[3] > time());
 
+        $return['date_set'] = !empty($result[8]) ? $result[8] : 0;
+        
         $return['tags'] = !empty($result[7]) ? unserialize($result[7]) : array();
         $return['task'] = !empty($result[5]) ? $result[5] : null;
         $return['params'] = !empty($result[6]) ? $result[6] : null;
@@ -98,8 +101,9 @@ class Redis implements ConnectionInterface
             $data[] = $key.':task';
             $data[] = $key.':params';
             $data[] = $key.':tags';
+            $data[] = $key.':date_set';
         }                
-        $results = $this->predis->mget($entriesToOutdate);
+        $results = $this->predis->mget($data);
         
         $return = array();
 
@@ -109,7 +113,7 @@ class Redis implements ConnectionInterface
         
         foreach ($fixedKeys as $k => $key) {
             $entry = array();
-            $i = $k * 8;
+            $i = $k * 9;
             if (empty($results[$i+7]) || !($entryTagsArray = unserialize($results[$i+7]))) {
                 continue;
             }
@@ -136,6 +140,8 @@ class Redis implements ConnectionInterface
             $entry['queue_fresh_until'] = !empty($results[$i+3]) ? $results[$i+3] : 0;
             $entry['queue_persistent'] = !empty($results[$i+4]);
             $entry['queue_is_fresh'] = !empty($results[$i+4]) || (!empty($results[$i+3]) && $results[$i+3] > time());
+            
+            $entry['date_set'] = !empty($results[$i+8]) ? $results[$i+8] : 0;
 
             $entry['tags'] = !empty($results[$i+7]) ? unserialize($results[$i+7]) : array();
             $entry['task'] = !empty($results[$i+5]) ? $results[$i+5] : null;
@@ -273,7 +279,8 @@ class Redis implements ConnectionInterface
                        $key.':data' => serialize($data), 
                        $key.':fresh_until' => $freshUntil,
                        $key.':persistent' => $persistent,
-                       $key.':tags' => serialize($tags)
+                       $key.':tags' => serialize($tags),
+                       $key.':date_set' => time()
                 ));
                 foreach ($tags as $tag) {
                     $pipe->sadd('_tag:'.$tag, $key);
@@ -306,7 +313,8 @@ class Redis implements ConnectionInterface
                        $key.':data' => serialize($data), 
                        $key.':fresh_until' => $freshUntil,
                        $key.':persistent' => $persistent,
-                       $key.':tags' => serialize($tags)
+                       $key.':tags' => serialize($tags),
+                       $key.':date_set' => time()
                 ));
                 foreach ($tags as $tag) {
                     $pipe->sadd('_tag:'.$tag, $key);
@@ -435,7 +443,8 @@ class Redis implements ConnectionInterface
                        $key.':queue_persistent',
                        $key.':queue_tags',
                        $key.':tags',
-                       $key.':temp' 
+                       $key.':temp',
+                       $key.':date_set'
                 ));
                 $pipe->zrem('_queue', $key);
                 foreach ($tags as $tag) {
@@ -479,7 +488,8 @@ class Redis implements ConnectionInterface
                            $key.':queue_persistent',
                            $key.':queue_tags',
                            $key.':tags',
-                           $key.':temp'
+                           $key.':temp',
+                           $key.':date_set'
                     ));
                     $pipe->zrem('_queue', $key);
                     foreach ($tags as $tag) {
@@ -508,7 +518,8 @@ class Redis implements ConnectionInterface
                            $key.':queue_persistent',
                            $key.':queue_tags',
                            $key.':tags',
-                           $key.':temp'
+                           $key.':temp',
+                           $key.':date_set'
                     ));
                     $pipe->zrem('_queue', $key);
                     foreach ($tags as $tag) {
@@ -575,6 +586,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
                     $entriesToRemove[] = $v.':temp';
+                    $entriesToRemove[] = $v.':date_set';
                     $keysToRemove = $v;
                 }
                 
@@ -612,6 +624,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
                     $entriesToRemove[] = $v.':temp';
+                    $entriesToRemove[] = $v.':date_set';
                     $keysToRemove = $v;
                 }
             }
@@ -652,6 +665,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
                     $entriesToRemove[] = $v.':temp';
+                    $entriesToRemove[] = $v.':date_set';
                     $keysToRemove = $v;
                 }
             }
@@ -707,6 +721,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
                     $entriesToRemove[] = $v.':temp';
+                    $entriesToRemove[] = $v.':date_set';
                     $keysToRemove = $v;
                 }
             }
@@ -744,6 +759,7 @@ class Redis implements ConnectionInterface
                     $entriesToRemove[] = $v.':queue_tags';
                     $entriesToRemove[] = $v.':tags';
                     $entriesToRemove[] = $v.':temp';
+                    $entriesToRemove[] = $v.':date_set';
                     
                     $keysToRemove = $v;
                 }
@@ -1075,7 +1091,8 @@ class Redis implements ConnectionInterface
                        $key.'._lock'.':queue_persistent',
                        $key.'._lock'.':queue_tags',
                        $key.'._lock'.':tags',
-                       $key.'._lock'.':temp' 
+                       $key.'._lock'.':temp',
+                       $key.'._lock'.':date_set' 
                 ));
                 $pipe->exec();
             });

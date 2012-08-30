@@ -71,7 +71,7 @@ $config = array();
     /*
      * oAuth2 / API v3 version!
      * 
-     * get analytics pageviews of a given url
+     * get analytics metric (pageviews, visits, ...) of a given url or set of urls
      * you need a registered oAuth2 application on the server/task side,
      * and an Analytics Account and a refresh token on the client side
      * 
@@ -89,6 +89,7 @@ $config = array();
      * 
      * params:
      * an array with
+     *   'metric' => 'the metric to recieve (without the "ga:"-prefix, e.g. 'pageviews', 'visits', ...)',
      *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
      *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
      *   'refreshToken' => 'the oAuth2 refresh token'
@@ -96,12 +97,36 @@ $config = array();
      *   'operator' => 'the filter operator (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
      *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
      *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
+     *   'bulkCacheTime' => do a bulk request, cache the result for this many seconds and filter the result locally (optional, default = 0)
+     *                      using a bulk-cache will reduce the number of google API requests, but may result in slower execution and older data
      * 
      * options:
      *   'clientKey' => 'the client key'
      *   'clientSecret' => 'the client secret'
      */
+    $config['tasks']['gametric'] = array('\\CacheQueue\\Task\\Analytics', 'getMetric', array(
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret'
+    ));
+    
+    /*
+     * get analytics pageviews of a given url or set of urls
+     * 
+     * @deprecated
+     * same as gametric task with metric 'pageviews'
+     */
     $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
+        'clientKey' => 'yourkey.apps.googleusercontent.com',
+        'clientSecret' => 'YourClientSecret'
+    ));
+    
+    /*
+     * get analytics visits of a given url or set of urls
+     * 
+     * @deprecated
+     * same as gametric task with metric 'visits'
+     */
+    $config['tasks']['visits'] = array('\\CacheQueue\\Task\\Analytics', 'getVisits', array(
         'clientKey' => 'yourkey.apps.googleusercontent.com',
         'clientSecret' => 'YourClientSecret'
     ));
@@ -273,6 +298,64 @@ $config = array();
      *   'options' => 'additional driver options' (optional)
      */
     $config['tasks']['pdo'] = array('\\CacheQueue\\Task\\PDO', 'execute', array(
+        'dns' => 'mysql:host=localhost;dbname=test',
+        'user' => 'root',
+        'pass' => 'rootpass',
+        'options' => array()
+    ));
+    
+    /*
+     * run multiple SQL query (using PDO)
+     * 
+     * works the same way as the single query task, except that the parameters 
+     * query, parameter, return, fetchStyle, fetchArgument and column must be arrays
+     * where the queries are grouped by array-key (can be numeric or string keys)
+     * the result is an array of the single results
+     * 
+     * example for the params:
+     * array(
+     *   'query' => array('foobar'=>'SELECT foo, bar FROM baz WHERE foobar = ?', 'count'=>'SELECT COUNT(*) FROM baz', 'del'=>'DELETE FROM bar WHERE abc > ?'),
+     *   'parameter => array('foobar' => array('foobaz'), 'del' => array(1337)), //no parameter for second query
+     *   'return => array('foobar' => 'all', 'count' => 'column', 'del' => 'rowCount')
+     * )
+     * possible response:
+     * array(
+     *   'foobar' => array(array('foo'=>'foo1','bar'=>'bar1'),array('foo'=>'foo2','bar'=>'bar2')),
+     *   'count' => 987,
+     *   'del' => 125
+     * );
+     * 
+     * 
+     * if the 'return' parameter is not defined, the task returns true on success or false on failure
+     * for return = 'rowCount', returns the number of rows affected by the last DELETE, INSERT, or UPDATE statement
+     * for return = 'column', returns a single column
+     * for return = 'row', returns a row column
+     * for return = 'all', returns all rows as array
+     * 
+     * params:
+     * an array with
+     *   'query' => 'a valid SQL statement' (can contain placeholders)
+     *   'parameter' => an array with the placeholder values (optional)
+     *   'return' => rowCount, column, row or all (optional)
+     *   'fetchStyle' => only for return = 'row' or return = 'all', the PDO::FETCH_STYLE (optional, default = PDO::FETCH_ASSOC)
+     *   'fetchArgument' => only for return = 'all' and certain fetchStyles (optional, see http://www.php.net/manual/de/pdostatement.fetchall.php)
+     *   'column' => only for return = 'column', the column number to return (optional, default = 0)
+     * 
+     *   'dns' => 'a valid PDO DNS' (optional, overwrites the config-dns, see http://www.php.net/manual/de/pdo.connections.php)
+     *   'user' => 'username for the sql user' (optional, overwrites the config-user), 
+     *   'pass' => 'password for the sql user' (optional, overwrites the config-pass, 
+     *   'options' => 'additional driver options' (optional, overwrites the config-options)
+     *   
+     *   
+     * 
+     * options:
+     * an array with
+     *   'dns' => 'a valid PDO DNS' (see http://www.php.net/manual/de/pdo.connections.php)
+     *   'user' => 'username for the sql user'
+     *   'pass' => 'password for the sql user'
+     *   'options' => 'additional driver options' (optional)
+     */
+    $config['tasks']['pdomulti'] = array('\\CacheQueue\\Task\\PDO', 'execute', array(
         'dns' => 'mysql:host=localhost;dbname=test',
         'user' => 'root',
         'pass' => 'rootpass',
