@@ -58,52 +58,86 @@ class Analytics
         $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
 
         $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
-        
+
         if (!empty($params['bulkCacheTime'])) {
-            $bulkCacheKey = 'analytics_cache_'.$metric.'_'.md5($params['profileId'].$dateFrom.$dateTo.$hostStr);
+            $bulkCacheKey = 'analytics_cache_'.$metric.'_'.$params['profileId'].'_'.$dateFrom.'_'.$dateTo.'_'.$hostStr;
             $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
             if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
-                $lockKey = $worker->getConnection()->obtainLock($bulkCacheKey, 10, 11);
+                $lockKey = $worker->getConnection()->obtainLock($bulkCacheKey, 60, 70);
                 if ($lockKey) {
                     $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
                     if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
+                        if ($logger = $worker->getLogger()) {
+                            $logger->logDebug('Analytics getMetric ('.$metric.'): no BulkCache for '.$bulkCacheKey.', got lock '.$lockKey.' and fetching data');
+                        }
+                        $bulkCacheStart = microtime(true);
                         try {
-                            $startIndex = 1;
-                            $bulkCache = array();                            
+                            
+                            $bulkCache = array();
+                            $bulkCacheTmp = array();           
+                            if (!empty($params['bulkCacheSplitDays'])) {
+                                $splitDays = (int) $params['bulkCacheSplitDays'];
+                                $actualDateFrom = $dateFrom;
+                                $actualDateTo = date('Y-m-d', strtotime($actualDateFrom) + (86400*($splitDays-1)));
+                            } else {
+                                $splitDays = false;
+                                $actualDateFrom = $dateFrom;
+                                $actualDateTo = $dateTo;
+                            }
+
                             do {
-                                $tries = 3;
-                                while(true) {
-                                    try {    
-                                        $extra = array(
-                                            'dimensions' => 'ga:hostname,ga:pagePath',
-                                            'max-results' => 10000,
-                                            'start-index' => $startIndex
-                                        );
-                                        if (!empty($params['hostname'])) {
-                                            $extra['filters'] = 'ga:hostname=='.$params['hostname'];
+                                if ($actualDateTo > $dateTo) {
+                                    $actualDateTo = $dateTo;
+                                }
+
+                                $startIndex = 1;
+                                                 
+                                do {
+                                    $tries = 3;
+                                    while(true) {
+                                        try {    
+                                            $extra = array(
+                                                'dimensions' => 'ga:hostname,ga:pagePath',
+                                                'max-results' => 10000,
+                                                'start-index' => $startIndex
+                                            );
+                                            if (!empty($params['hostname'])) {
+                                                $extra['filters'] = 'ga:hostname=='.$params['hostname'];
+                                            }
+                                            $data = $service->data_ga->get('ga:'.$params['profileId'], $actualDateFrom, $actualDateTo, 'ga:'.$metric, $extra);
+                                            break;
+                                        } catch (\Exception $e) {
+                                            if (!--$tries) {
+                                                throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
+                                            }
+                                            usleep(rand(300000,500000)+pow(2,2-$tries)*1000000);
                                         }
-                                        $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:'.$metric, $extra);
-                                        break;
-                                    } catch (\Exception $e) {
-                                        if (!--$tries) {
-                                            throw new Exception('Api-Error:' .$e->getMessage(), $e->getCode(), $e);
-                                        }
-                                        usleep(rand(300000,500000)+pow(2,2-$tries)*1000000);
-                                    }
-                                };
-                                $bulkCache = array_merge($bulkCache, $data['rows']);
-                            } while($startIndex - 1 + count($data['rows']) < $data['totalResults'] && $startIndex+=10000);
+                                    };
+                                    $bulkCacheTmp = array_merge($bulkCache, $data['rows']);
+                                } while($startIndex - 1 + count($data['rows']) < $data['totalResults'] && $startIndex+=10000);
+                                
+                                if ($splitDays) {
+                                    $actualDateFrom = date('Y-m-d', strtotime($actualDateTo) + (86400));
+                                    $actualDateTo = date('Y-m-d', strtotime($actualDateFrom) + (86400*($splitDays-1)));
+                                }
+                                
+                            } while($splitDays && $actualDateFrom <= $dateTo);
+                            
+                            foreach ($bulkCacheTmp as $tmp) {
+                                $bulkCache[$tmp[1]] = isset($bulkCache[$tmp[1]]) ? $bulkCache[$tmp[1]] + (int) $tmp[2] : (int) $tmp[2];
+                            }
                             $worker->getConnection()->set($bulkCacheKey, $bulkCache, $params['bulkCacheTime'], false, array('analytics', 'bulkcache'));
                             $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
                             if ($logger = $worker->getLogger()) {
-                                $logger->logDebug('Analytics getMetric ('.$metric.'): created BulkCache with '.count($bulkCache). ' entries');
+                                $bulkCacheEnd = microtime(true);
+                                $logger->logDebug('Analytics getMetric ('.$metric.'): created BulkCache with '.count($bulkCache). ' entries for '.$params['profileId'].'_'.$dateFrom.'_'.$dateTo.'_'.$hostStr.' / took '.(number_format($bulkCacheEnd-$bulkCacheStart, 2, ',', '.')).'s');
                             }
                         } catch (\Exception $e) {
                             $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
                             throw $e;
                         }
                     } else {
-                        $worker->getConnection()->releaseLock($key, $lockKey);
+                        $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
                         $bulkCache = $bulkCacheData['data'];
                     }
                 } else {
@@ -113,41 +147,38 @@ class Analytics
                 $bulkCache = $bulkCacheData['data'];
             }
             if (empty($bulkCache)) {
-                if ($logger = $worker->getLogger()) {
-                    $logger->logError('Analytics getMetric ('.$metric.') from BulkCache: FAILED (no cache available or empty BulkCache)');
-                }
-                return 0;
+                throw new Exception('Analytics getMetric ('.$metric.') from BulkCache for '.$bulkCacheKey.': FAILED (no cache available or empty BulkCache)');
             }
             $count = 0;
             switch ($op) {
                 case '!=':
-                    foreach ($bulkCache as $entry) {
-                        if ($entry[1] != $path) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if ($cachePath != $path) $count += (int) $cacheCount; 
                     }
                     break;
                 case '=@':
-                    foreach ($bulkCache as $entry) {
-                        if (strpos($entry[1], $path) !== false) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if (strpos($cachePath, $path) !== false) $count += (int) $cacheCount; 
                     }
                     break;
                 case '!@':
-                    foreach ($bulkCache as $entry) {
-                        if (strpos($entry[1], $path) === false) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if (strpos($cachePath, $path) === false) $count += (int) $cacheCount; 
                     }
                     break;
                 case '=~':
-                    foreach ($bulkCache as $entry) {
-                        if (preg_match('/'.str_replace('/','\\/',$path).'/', $entry[1])) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if (preg_match('/'.str_replace('/','\\/',$path).'/', $cachePath)) $count += (int) $cacheCount; 
                     }
                     break;
                 case '!~':
-                    foreach ($bulkCache as $entry) {
-                        if (!preg_match('/'.str_replace('/','\\/',$path).'/', $entry[1])) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if (!preg_match('/'.str_replace('/','\\/',$path).'/', $cachePath)) $count += (int) $cacheCount; 
                     }
                     break;
                 default:
-                    foreach ($bulkCache as $entry) {
-                        if ($entry[1] == $path) $count += (int) $entry[2]; 
+                    foreach ($bulkCache as $cachePath => $cacheCount) {
+                        if ($cachePath == $path) $count += (int) $cacheCount; 
                     }
                     break;
             }

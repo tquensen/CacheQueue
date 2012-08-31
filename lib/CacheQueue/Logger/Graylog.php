@@ -45,8 +45,6 @@ class Graylog implements LoggerInterface
         $gelf->setLevel($level);
         $gelf->setFacility($this->facility);
         $gelf->send();
-        
-        unset($gelf);
     }
 
 }

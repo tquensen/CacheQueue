@@ -99,6 +99,10 @@ $config = array();
      *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
      *   'bulkCacheTime' => do a bulk request, cache the result for this many seconds and filter the result locally (optional, default = 0)
      *                      using a bulk-cache will reduce the number of google API requests, but may result in slower execution and older data
+     *   'bulkCacheSplitDays' => optional, default false; split the bulk requests in date-ranges of bulkCacheSplitDays each and merge them afterwards.
+     *                           this is to prevent sampling of the google data recommended value depends on actual page soze and age.
+     *                           keep in mind that large date-ranges result in many requests, so for a dateFrom 1 month ago, you should use a
+     *                           bulkCacheSplitDays of 10 days or more, not recommended for ranges > 2 month
      * 
      * options:
      *   'clientKey' => 'the client key'
@@ -397,7 +401,7 @@ $config = array();
         //'server' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://localhost:27017' (see http://de3.php.net/manual/en/mongo.construct.php)
         'database' => 'cache_queue',
         'collection' => 'cache',
-        'safe' => false,
+        'safe' => true,
         'dboptions' => array(
             //'timeout' => 2000,
             //'username' => 'username',
@@ -427,7 +431,7 @@ $config = array();
     
     //FileLogger
     $config['logger'] = array(
-        'file' => dirname(__FILE__).'/log.txt',
+        'file' => dirname(__FILE__).'/cachequeue_log.txt',
         'showPid' => false //display the process ID in the logfile - useful when multiple workers are running
     );
 
