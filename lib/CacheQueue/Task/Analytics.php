@@ -57,8 +57,6 @@ class Analytics
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
 
-        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
-
         if (!empty($params['bulkCacheTime'])) {
             $bulkCacheKey = 'analytics_cache_'.$metric.'_'.$params['profileId'].'_'.$dateFrom.'_'.$dateTo.'_'.$hostStr;
             $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
@@ -67,6 +65,9 @@ class Analytics
                 if ($lockKey) {
                     $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
                     if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
+                        
+                        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+
                         if ($logger = $worker->getLogger()) {
                             $logger->logDebug('Analytics getMetric ('.$metric.'): no BulkCache for '.$bulkCacheKey.', got lock '.$lockKey.' and fetching data');
                         }
@@ -113,7 +114,7 @@ class Analytics
                                             usleep(rand(300000,500000)+pow(2,2-$tries)*1000000);
                                         }
                                     };
-                                    $bulkCacheTmp = array_merge($bulkCache, $data['rows']);
+                                    $bulkCacheTmp = array_merge($bulkCacheTmp, $data['rows']);
                                 } while($startIndex - 1 + count($data['rows']) < $data['totalResults'] && $startIndex+=10000);
                                 
                                 if ($splitDays) {
@@ -124,7 +125,12 @@ class Analytics
                             } while($splitDays && $actualDateFrom <= $dateTo);
                             
                             foreach ($bulkCacheTmp as $tmp) {
-                                $bulkCache[$tmp[1]] = isset($bulkCache[$tmp[1]]) ? $bulkCache[$tmp[1]] + (int) $tmp[2] : (int) $tmp[2];
+                                $key = md5($tmp[1]);
+                                if (isset($bulkCache[$key])) {
+                                    $bulkCache[$key]['count'] += (int) $tmp[2];
+                                } else {
+                                    $bulkCache[$key] = array('path' => $tmp[1], 'count' => (int) $tmp[2]);
+                                }
                             }
                             $worker->getConnection()->set($bulkCacheKey, $bulkCache, $params['bulkCacheTime'], false, array('analytics', 'bulkcache'));
                             $worker->getConnection()->releaseLock($bulkCacheKey, $lockKey);
@@ -152,33 +158,33 @@ class Analytics
             $count = 0;
             switch ($op) {
                 case '!=':
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if ($cachePath != $path) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if ($currentCache['path'] != $path) $count += (int) $currentCache['count']; 
                     }
                     break;
                 case '=@':
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if (strpos($cachePath, $path) !== false) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if (strpos($currentCache['path'], $path) !== false) $count += (int) $currentCache['count']; 
                     }
                     break;
                 case '!@':
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if (strpos($cachePath, $path) === false) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if (strpos($currentCache['path'], $path) === false) $count += (int) $currentCache['count']; 
                     }
                     break;
                 case '=~':
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if (preg_match('/'.str_replace('/','\\/',$path).'/', $cachePath)) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if (preg_match('/'.str_replace('/','\\/',$path).'/', $currentCache['path'])) $count += (int) $currentCache['count']; 
                     }
                     break;
                 case '!~':
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if (!preg_match('/'.str_replace('/','\\/',$path).'/', $cachePath)) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if (!preg_match('/'.str_replace('/','\\/',$path).'/', $currentCache['path'])) $count += (int) $currentCache['count']; 
                     }
                     break;
                 default:
-                    foreach ($bulkCache as $cachePath => $cacheCount) {
-                        if ($cachePath == $path) $count += (int) $cacheCount; 
+                    foreach ($bulkCache as $currentCache) {
+                        if ($currentCache['path'] == $path) $count += (int) $currentCache['count']; 
                     }
                     break;
             }
@@ -187,6 +193,8 @@ class Analytics
                 $logger->logDebug('Analytics getMetric ('.$metric.') from BulkCache: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
             }
         } else {
+            $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+
             $tries = 3;
             while(true) {
                 try {    

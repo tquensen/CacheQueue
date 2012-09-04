@@ -29,8 +29,12 @@ if (empty($_SERVER['argv'][1])) {
 
 try {
     if (empty($_SERVER['argv'][2])) {
-        echo 'Error: a valid key, "tag" or "all" required as first parameter!'."\n";
-        exit;
+        if ($_SERVER['argv'][1] != 'setup') {
+            echo 'Error: a valid key, "tag" or "all" required as first parameter!'."\n";
+            exit;
+        } else {
+            $key = null;
+        }
     } else {
         $key = trim($_SERVER['argv'][2]);
     }
@@ -120,7 +124,15 @@ try {
                 echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
             }
             break;
-         default:
+        case 'setup':
+            if (method_exists($connection, 'setup')) {
+                echo 'Running $connection->setup();'."\n";
+                $connection->setup();
+            } else {
+                echo 'Your current connection ('.get_class($connection).') has no setup-method;'."\n";
+            }
+            break;
+        default:
             echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
             break;
     }
@@ -148,6 +160,8 @@ Available Tasks:
                  if "force", outdates any entries regardless of freshness or persistent state
                  if "persistent", outdates only matching persistent entries
                  if "nonpersistent", outdates only non persistent entries
+                 
+    setup        run the setuup-method of the connection class (if available)
                  
 EOF;
 }

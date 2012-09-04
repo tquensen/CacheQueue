@@ -140,7 +140,7 @@ class Mongo implements ConnectionInterface
         
         $return['key'] = $result['value']['_id'];
         $return['fresh_until'] = !empty($result['value']['queue_fresh_until']) ? $result['value']['queue_fresh_until']->sec : 0;
-        $return['persistent'] = !empty($result['queue_persistent']);
+        $return['persistent'] = !empty($result['value']['queue_persistent']);
         $return['tags'] = !empty($result['value']['queue_tags']) ? $result['value']['queue_tags'] : null;
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;

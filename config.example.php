@@ -391,12 +391,30 @@ $config = array();
 
 // --- CONNECTION SETTINGS --- //  
   
+    //settings for APCProxy
+    /*
+     * add APC for caching of frequently accessed data
+     * recommended if there are far more reads (get) than writes (set, queue,outdate,remove)
+     */
+    $config['connection'] = array(
+        'prefix' => 'cc_', //prefix to use for the apc keys
+        'connectionClass' => '\\CacheQueue\\Connection\\Mongo', //class of the real connection to use (Mongo, MySQL, Redis, ..)
+        'connectionFile' => 'CacheQueue/Connection/Mongo.php', //this file will be included to load the connection class. you can remove this if you use an autoloader
+        'connectionConfig' => array( //the complete config-array of the real connection (Mongo, MySQL, Redis, ..) example for Mongo:
+            'server' => 'mongodb://localhost:27017',
+            'database' => 'cache_queue',
+            'collection' => 'cache',
+            'safe' => true,
+            'dboptions' => array()
+        )
+    );
+    
     //settings for mongodb
     /*
      * your cache collection should have indixes 'queued' => 1, 'fresh_until' => 1, 'persistent' => 1, 'queue_fresh_until' => 1, 'queue_persistent' => 1, 'tags' => 1, 'queue_priority' => 1
      * run \CacheQueue\Connection\Mongo->setup() to generate these indices or add them manually
      */  
-    
+    /*
     $config['connection'] = array(
         //'server' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://localhost:27017' (see http://de3.php.net/manual/en/mongo.construct.php)
         'database' => 'cache_queue',
@@ -408,6 +426,24 @@ $config = array();
             //'password' => 'password'
         )
     );
+     */
+    
+    //settings for MySQL
+    /*
+     * your cache table must be created before using this connection
+     * run \CacheQueue\Connection\MySQL->setup() to generate the table
+     */  
+    /*
+    $config['connection'] = array(
+        'dns' => 'mysql:host=localhost;dbname=test', //a valid PDO DNS (see http://www.php.net/manual/de/pdo.connections.php)
+        'user' => 'root',
+        'pass' => 'rootpass',
+        'table' => 'cache',
+        'options' => array(
+            //additional database/driver specific options
+        )
+    );
+    */
     
     
     //settings for redis / predis
@@ -451,7 +487,7 @@ $config = array();
 
     //define the classes you want to use as connectin, client, server and logger
     $config['classes'] = array(
-        'connection' => '\\CacheQueue\\Connection\\Mongo', //or '\\CacheQueue\\Connection\\Redis' or '\\CacheQueue\\Connection\\Dummy'
+        'connection' => '\\CacheQueue\\Connection\\APCProxy', //'\\CacheQueue\\Connection\\Mongo' or '\\CacheQueue\\Connection\\MySQL' or '\\CacheQueue\\Connection\\Redis' or '\\CacheQueue\\Connection\\Dummy'
         'client' => '\\CacheQueue\\Client\\Basic',
         'worker' => '\\CacheQueue\\Worker\\Basic',
         'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog'
