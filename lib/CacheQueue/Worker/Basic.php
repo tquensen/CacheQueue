@@ -39,26 +39,7 @@ class Basic implements WorkerInterface
                 throw new Exception('invalid task '.$task.'.');
             }
 
-            $taskData = (array) $this->tasks[$task];
-            $taskClass = $taskData[0];
-            $taskMethod = !empty($taskData[1]) ? $taskData[1] : 'execute';
-            $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
-
-            if (!class_exists($taskClass)) {
-                $taskFile = str_replace('\\', \DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
-                require_once($taskFile);
-            }
-
-            if (!class_exists($taskClass)) {
-                throw new Exception('class '.$taskClass.' not found.');
-            }
-            if (!method_exists($taskClass, $taskMethod)) {
-                throw new Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
-            }
-
-            $task = new $taskClass;     
-            $result = $task->$taskMethod($params, $taskConfig, $job, $this);
-            unset($task);
+            $result = $this->executeTask($task, $params, $job);
 
             if ($temp) {
                 $this->connection->remove($job['key'], true);
@@ -72,6 +53,32 @@ class Basic implements WorkerInterface
             throw $e;
         }
 
+        return $result;
+    }
+    
+    public function executeTask($task, $params, $job = false)
+    {
+        $taskData = (array) $this->tasks[$task];
+        $taskClass = $taskData[0];
+        $taskMethod = !empty($taskData[1]) ? $taskData[1] : 'execute';
+        $taskConfig = !empty($taskData[2]) ? $taskData[2] : array();
+
+        if (!class_exists($taskClass)) {
+            $taskFile = str_replace('\\', \DIRECTORY_SEPARATOR, trim($taskClass, '\\')).'.php';
+            require_once($taskFile);
+        }
+
+        if (!class_exists($taskClass)) {
+            throw new Exception('class '.$taskClass.' not found.');
+        }
+        if (!method_exists($taskClass, $taskMethod)) {
+            throw new Exception('method '.$taskMethod.' in in class '.$taskClass.' not found.');
+        }
+
+        $task = new $taskClass;     
+        $result = $task->$taskMethod($params, $taskConfig, $job, $this);
+        unset($task);
+        
         return $result;
     }
 

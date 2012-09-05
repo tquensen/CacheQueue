@@ -91,13 +91,17 @@ class APCProxy implements ConnectionInterface
     
     public function removeByTag($tag, $force = false, $persistent = null)
     {
-        apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/', \APC_ITER_VALUE));
+        if ($force) {
+            apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
+        }
         return $this->connection->removeByTag($tag, $force, $persistent);
     }
     
     public function removeAll($force = false, $persistent = null)
     {
-        apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/', \APC_ITER_VALUE));
+        if ($force) {
+            apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
+        }
         return $this->connection->removeAll($force, $persistent);
     }
     
@@ -109,13 +113,17 @@ class APCProxy implements ConnectionInterface
     
     public function outdateByTag($tag, $force = false, $persistent = null)
     {
-        apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/', \APC_ITER_VALUE));
+        if ($force) {
+            apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
+        }
         return $this->connection->outdateByTag($tag, $force, $persistent);
     }
     
     public function outdateAll($force = false, $persistent = null)
     {
-        apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/', \APC_ITER_VALUE));
+        if ($force) {
+            apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
+        }
         return $this->connection->outdateAll($force, $persistent);
     }
 

@@ -21,6 +21,17 @@ interface WorkerInterface
     public function work($job);
     
     /**
+     * runs a worker task and returns the result
+     * 
+     * @param string $task the name of the task to run
+     * @param mixed $params parameters/data for the task
+     * @param array|bool the corresponding job data or false
+     * 
+     * @return mixed returns the result/output of the processed task
+     */
+    public function executeTask($task, $params, $job = false);
+    
+    /**
      * gets a queued entry and removes it from queue
      * 
      * @return array|bool the job data or false if no job was found 
