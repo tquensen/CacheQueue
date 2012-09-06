@@ -82,7 +82,7 @@ class Dummy implements ConnectionInterface
     {
         return false;
     }
-
+    
     public function releaseLock($key, $lockKey)
     {
         return false;
@@ -96,6 +96,11 @@ class Dummy implements ConnectionInterface
     public function getByTag($key, $onlyFresh = false)
     {
         return array();
+    }
+
+    public function cleanup($outdatedFor = 0)
+    {
+        return false;
     }
     
 }

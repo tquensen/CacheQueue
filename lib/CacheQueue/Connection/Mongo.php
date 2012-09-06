@@ -587,6 +587,22 @@ class Mongo implements ConnectionInterface
 
         }
     }
+    
+    public function cleanup($outdatedFor = 0)
+    {
+        return (bool) $this->collection->remove(
+                array(
+                    '$or' => array(
+                        array(
+                            'fresh_until' => array('$lt' => new \MongoDate(time()-$outdatedFor)),
+                            'persistent' => false
+                            ),
+                        array('persistent' => null)
+                    )
+                ),
+                array('safe' => $this->safe, 'multiple' => true)
+            );
+    }
 
     public function obtainLock($key, $lockFor, $timeout = null)
     {

@@ -4,6 +4,9 @@ namespace CacheQueue\Connection;
 class APCProxy implements ConnectionInterface
 {
     private $prefix = null;
+    private $filterTags = null;
+    private $filterRegex = null;
+    
     /**
      *
      * @var ConnectionInterface
@@ -13,6 +16,9 @@ class APCProxy implements ConnectionInterface
     public function __construct($config = array())
     {
         $this->prefix = !empty($config['prefix']) ? $config['prefix'] : 'cc_';
+        
+        $this->filterTags = !empty($config['filterTags']) ? (array) $config['filterTags'] : false;
+        $this->filterRegex = !empty($config['filterRegex']) ? $config['filterRegex'] : false;
         
         $connectionClass = $config['connectionClass'];
         if (!class_exists($connectionClass)) {
@@ -32,10 +38,16 @@ class APCProxy implements ConnectionInterface
 
     public function get($key)
     {
-        if (!$result = apc_fetch($this->prefix.$key)) {
+        
+        if (!apc_exists($this->prefix.$key) || !$result = apc_fetch($this->prefix.$key)) {
+            if ($result === 0) { $skip = true; }
             $result = $this->connection->get($key);
-            if ($result && $result['is_fresh']) {
-                apc_store($this->prefix.$key, $result, $result['persistent'] ? 0 : $result['fresh_until'] - time() + 1);
+            if (empty($skip) && $result && $result['is_fresh']) {
+                if ((!$this->filterRegex || preg_match('/'.str_replace('/', '\/', $this->filterRegex).'/', $key)) && (!$this->filterTags || (!empty($result['tags']) && array_intersect($this->filterTags, $result['tags'])))) {
+                    apc_store($this->prefix.$key, $result, $result['persistent'] ? 0 : $result['fresh_until'] - time() + 1);
+                } else {
+                    apc_store($this->prefix.$key, 0);
+                }
             }
         }
         return $result;
@@ -91,7 +103,7 @@ class APCProxy implements ConnectionInterface
     
     public function removeByTag($tag, $force = false, $persistent = null)
     {
-        if ($force) {
+        if ($force && (!$this->filterTags || (!empty($tag) && array_intersect($this->filterTags, (array) $tag)))) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
         }
         return $this->connection->removeByTag($tag, $force, $persistent);
@@ -113,7 +125,7 @@ class APCProxy implements ConnectionInterface
     
     public function outdateByTag($tag, $force = false, $persistent = null)
     {
-        if ($force) {
+        if ($force && (!$this->filterTags || (!empty($tag) && array_intersect($this->filterTags, (array) $tag)))) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
         }
         return $this->connection->outdateByTag($tag, $force, $persistent);
@@ -125,6 +137,12 @@ class APCProxy implements ConnectionInterface
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
         }
         return $this->connection->outdateAll($force, $persistent);
+    }
+    
+    public function cleanup($outdatedFor = 0)
+    {
+        apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
+        return $this->connection->cleanup($outdatedFor);
     }
 
     public function obtainLock($key, $lockFor, $timeout = null)

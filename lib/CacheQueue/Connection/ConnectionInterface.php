@@ -137,6 +137,13 @@ interface ConnectionInterface
     public function outdateByTag($tag, $force = false, $persistent = null);
     
     /**
+     * removes all entries which are outdated for a specific time
+     * 
+     * @param int $outdatedFor remove only those entries that are outdated for at lease this number of seconde (default = 0)
+     */
+    public function cleanup($outdatedFor = 0);
+    
+    /**
      * tries to obtain a lock for the given key
      * 
      * @param string $key the key

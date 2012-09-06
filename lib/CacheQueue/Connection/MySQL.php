@@ -359,7 +359,8 @@ class MySQL implements ConnectionInterface
         $query = 'DELETE FROM '.$this->tableName.' WHERE id = ? ';
         $values = array($key);
         if (!$force) {
-            $query .= ' AND fresh_until < NOW() and persistent != 1';
+            $query .= ' AND fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'AND persistent = ?';
@@ -379,7 +380,8 @@ class MySQL implements ConnectionInterface
         
         $values = array();
         if (!$force) {
-            $query .= ' AND fresh_until < NOW() and persistent != 1';
+            $query .= ' AND fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'AND persistent = ?';
@@ -395,7 +397,8 @@ class MySQL implements ConnectionInterface
         $query = 'DELETE FROM '.$this->tableName.' ';
         $values = array();
         if (!$force) {
-            $query .= ' WHERE fresh_until < NOW() and persistent != 1';
+            $query .= ' WHERE fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'WHERE persistent = ?';
@@ -409,16 +412,17 @@ class MySQL implements ConnectionInterface
     public function outdate($key, $force = false, $persistent = null)
     {
         $query = 'UPDATE '.$this->tableName.' SET
-            fresh_until = 0,
+            fresh_until = ?,
             queue_fresh_until = 0,
             persistent = 0,
             queue_persistent = 0,
             queued = 0
             WHERE id = ? ';
         
-        $values = array($key);
+        $values = array(time()-1, $key);
         if (!$force) {
-            $query .= ' AND fresh_until < NOW() and persistent != 1';
+            $query .= ' AND fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'AND persistent = ?';
@@ -433,7 +437,7 @@ class MySQL implements ConnectionInterface
     {
         $tags = array_values((array) $tag);
         $query = 'UPDATE '.$this->tableName.' SET
-            fresh_until = 0,
+            fresh_until = ?,
             queue_fresh_until = 0,
             persistent = 0,
             queue_persistent = 0,
@@ -442,9 +446,10 @@ class MySQL implements ConnectionInterface
         
         $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%%', $tags).'%") ';
         
-        $values = array();
+        $values = array(time()-1);
         if (!$force) {
-            $query .= ' AND fresh_until < NOW() and persistent != 1';
+            $query .= ' AND fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'AND persistent = ?';
@@ -458,16 +463,17 @@ class MySQL implements ConnectionInterface
     public function outdateAll($force = false, $persistent = null)
     {
         $query = 'UPDATE '.$this->tableName.' SET
-            fresh_until = 0,
+            fresh_until = ?,
             queue_fresh_until = 0,
             persistent = 0,
             queue_persistent = 0,
             queued = 0
             ';
         
-        $values = array();
+        $values = array(time()-1);
         if (!$force) {
-            $query .= ' WHERE fresh_until < NOW() and persistent != 1';
+            $query .= ' WHERE fresh_until < ? and persistent != 1';
+            $values[] = time();
         } else {
             if ($persistent !== null) {
                 $query .= 'WHERE persistent = ?';
@@ -476,6 +482,13 @@ class MySQL implements ConnectionInterface
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
+    }
+    
+    public function cleanup($outdatedFor = 0)
+    {
+        $query = 'DELETE FROM '.$this->tableName.' WHERE fresh_until < ? and persistent != 1';
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute(array(time()-$outdatedFor));
     }
 
     public function obtainLock($key, $lockFor, $timeout = null)

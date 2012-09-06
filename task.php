@@ -29,11 +29,18 @@ if (empty($_SERVER['argv'][1])) {
 
 try {
     if (empty($_SERVER['argv'][2])) {
-        if ($_SERVER['argv'][1] != 'setup') {
-            echo 'Error: a valid key, "tag" or "all" required as first parameter!'."\n";
+        if ($_SERVER['argv'][1] == 'setup') {
+            $key = null;
+        } elseif ($_SERVER['argv'][1] == 'cleanup') {
+            echo 'Error: outdated-time required as first parameter'."\n";
+            echo 'Examples:'."\n";
+            echo 'cleanup 3600'."\t".'removes all entries that are outdated for at least 1 hour'."\n";
+            echo 'cleanup 86400'."\t".'removes all entries that are outdated for at least 1 day'."\n";
+            echo 'cleanup 604800'."\t".'removes all entries that are outdated for at least 1 week'."\n";
             exit;
         } else {
-            $key = null;
+            echo 'Error: a valid key, "tag" or "all" required as first parameter!'."\n";
+            exit;
         }
     } else {
         $key = trim($_SERVER['argv'][2]);
@@ -124,6 +131,10 @@ try {
                 echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
             }
             break;
+        case 'cleanup':
+            $status = $connection->cleanup((int) $key);
+            echo 'Removing all entries that are outdated for at least '.(int) $key.' seconds: '.($status ? 'OK' : 'ERROR')."\n";
+            break;
         case 'setup':
             if (method_exists($connection, 'setup')) {
                 echo 'Running $connection->setup();'."\n";
@@ -161,7 +172,10 @@ Available Tasks:
                  if "persistent", outdates only matching persistent entries
                  if "nonpersistent", outdates only non persistent entries
                  
-    setup        run the setuup-method of the connection class (if available)
+    cleanup SEC  removes all cached entries that are outdated for at least SEC seconds
+                 (3600 = 1 hour, 86400 = 1 day, 604800 = 1 week)
+    
+    setup        run the setup-method of the connection class (if available)
                  
 EOF;
 }

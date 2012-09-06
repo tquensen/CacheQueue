@@ -798,7 +798,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($key) {
                 $pipe->multi();
                 $pipe->mset(array(
-                       $key.':fresh_until' => 0,
+                       $key.':fresh_until' => time()-1,
                        $key.':persistent' => 0,
                        $key.':queue_fresh_until' => 0,
                        $key.':queue_persistent' => 0,
@@ -831,7 +831,7 @@ class Redis implements ConnectionInterface
                 $result = $this->predis->pipeline(function($pipe) use ($key) {
                     $pipe->multi();
                     $pipe->mset(array(
-                           $key.':fresh_until' => 0,
+                           $key.':fresh_until' => time()-1,
                            $key.':persistent' => 0,
                            $key.':queue_fresh_until' => 0,
                            $key.':queue_persistent' => 0,
@@ -844,7 +844,7 @@ class Redis implements ConnectionInterface
                 return $result && !empty($result[2]);
             } else {
                 return (bool) $this->predis->mset(array(
-                       $key.':fresh_until' => 0,
+                       $key.':fresh_until' => time()-1,
                        $key.':persistent' => 0,
                        $key.':queue_fresh_until' => 0,
                        $key.':queue_persistent' => 0,
@@ -896,7 +896,7 @@ class Redis implements ConnectionInterface
             $result = $this->predis->pipeline(function($pipe) use ($fixedKeys, $tags) {
                 $entriesToOutdate = array();
                 foreach ($fixedKeys as $v) {
-                    $entriesToOutdate[$v.':persistent'] = 0;
+                    $entriesToOutdate[$v.':persistent'] = time()-1;
                     $entriesToOutdate[$v.':fresh_until'] = 0;
                     $entriesToOutdate[$v.':queue_persistent'] = 0;
                     $entriesToOutdate[$v.':queue_fresh_until'] = 0;
@@ -917,7 +917,7 @@ class Redis implements ConnectionInterface
                 $entriesToOutdate = array();
                 foreach ($persistentKeys as $k => $v) {
                     if ($matchingEntries[$k] == $persistent) {
-                        $entriesToOutdate[$v.':fresh_until'] = 0;
+                        $entriesToOutdate[$v.':fresh_until'] = time()-1;
                         $entriesToOutdate[$v.':persistent'] = 0;
                         $entriesToOutdate[$v.':queue_persistent'] = 0;
                         $entriesToOutdate[$v.':queue_fresh_until'] = 0;
@@ -946,11 +946,11 @@ class Redis implements ConnectionInterface
                 $entriesToOutdate = array();
                 foreach ($freshUntilKeys as $k => $v) {
                     if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
-                        $entriesToOutdate[] = $v.':fresh_until';
-                        $entriesToOutdate[] = $v.':persistent';
-                        $entriesToOutdate[] = $v.':queue_persistent';
-                        $entriesToOutdate[] = $v.':queue_fresh_until';
-                        $entriesToOutdate[] = $v.':queue_worker_id';
+                        $entriesToOutdate[$v.':fresh_until'] = time()-1;
+                        $entriesToOutdate[$v.':persistent'] = 0;
+                        $entriesToOutdate[$v.':queue_persistent'] = 0;
+                        $entriesToOutdate[$v.':queue_fresh_until'] = 0;
+                        $entriesToOutdate[$v.':queue_worker_id'] = 0;
                     }
                 }
                 $pipe->mset($entriesToOutdate);
@@ -979,14 +979,14 @@ class Redis implements ConnectionInterface
             $entriesToOutdate = array();
             foreach ($entries['fresh_until'] as $k => $v) {
                 $entriesToOutdate[$k.':persistent'] = 0;
-                $entriesToOutdate[$k.':fresh_until'] = 0;
+                $entriesToOutdate[$k.':fresh_until'] = time()-1;
                 $entriesToOutdate[$k.':queue_persistent'] = 0;
                 $entriesToOutdate[$k.':queue_fresh_until'] = 0;
                 $entriesToOutdate[$k.':queue_worker_id'] = 0;
             }
             foreach ($entries['persistent'] as $k => $v) {
                 $entriesToOutdate[$k.':persistent'] = 0;
-                $entriesToOutdate[$k.':fresh_until'] = 0;
+                $entriesToOutdate[$k.':fresh_until'] = time()-1;
                 $entriesToOutdate[$k.':queue_persistent'] = 0;
                 $entriesToOutdate[$k.':queue_fresh_until'] = 0;
                 $entriesToOutdate[$k.':queue_worker_id'] = 0;
@@ -1003,11 +1003,11 @@ class Redis implements ConnectionInterface
             $entriesToOutdate = array();
             foreach ($persistentKeys as $k => $v) {
                 if ($matchingEntries[$k] == $persistent) {
-                    $entriesToOutdate[$v.':fresh_until'] = 0;
+                    $entriesToOutdate[$v.':fresh_until'] = time()-1;
                     $entriesToOutdate[$v.':persistent'] = 0;
-                    $entriesToOutdate[$k.':queue_persistent'] = 0;
-                    $entriesToOutdate[$k.':queue_fresh_until'] = 0;
-                    $entriesToOutdate[$k.':queue_worker_id'] = 0;
+                    $entriesToOutdate[$v.':queue_persistent'] = 0;
+                    $entriesToOutdate[$v.':queue_fresh_until'] = 0;
+                    $entriesToOutdate[$v.':queue_worker_id'] = 0;
                 }
             }
             return $this->predis->mset($entriesToOutdate);
@@ -1027,15 +1027,71 @@ class Redis implements ConnectionInterface
             $entriesToOutdate = array();
             foreach ($freshUntilKeys as $k => $v) {
                 if (empty($result[1][$k]) && !empty($result[0][$k]) && $result[0][$k] > time()) {
-                    $entriesToOutdate[] = $v.':fresh_until';
-                    $entriesToOutdate[] = $v.':persistent';
-                    $entriesToOutdate[] = $v.':queue_persistent';
-                    $entriesToOutdate[] = $v.':queue_fresh_until';
-                    $entriesToOutdate[] = $v.':queue_worker_id';
+                    $entriesToOutdate[$v.':fresh_until'] = time()-1;
+                    $entriesToOutdate[$v.':persistent'] = 0;
+                    $entriesToOutdate[$v.':queue_persistent'] = 0;
+                    $entriesToOutdate[$v.':queue_fresh_until'] = 0;
+                    $entriesToOutdate[$v.':queue_worker_id'] = 0;
                 }
             }
             return $this->predis->mset($entriesToOutdate);
         }
+    }
+    
+    public function cleanup($outdatedFor = 0)
+    {
+        $keys = $this->predis->keys($this->prefix.'*');
+        $fixedKeys = array();
+        
+        $prefixlength = strlen($this->prefix);
+        $entries = array();
+        
+        foreach ($keys as $key) {
+            $fixedKey = substr($key, $prefixlength - 1);
+            $fixedKeys[] = $fixedKey;
+            $tmp = explode(':', $fixedKey, 2);
+            $entries[$tmp[1]][$tmp[0]] = $fixedKey;
+        }
+  
+        $freshUntilKeys = array_keys($entries['fresh_until']);
+        $freshUntilEntries = array_values($entries['fresh_until']);
+        $persistentEntries = str_replace(':fresh_until', ':persistent', $freshUntilKeys);
+        $result = $this->predis->pipeline(function($pipe) use ($freshUntilEntries, $persistentEntries) {
+            $pipe->mget($freshUntilEntries);
+            $pipe->mget($persistentEntries);
+        });
+
+        if (empty($result)) {
+            return false;
+        }
+
+        $entriesToRemove = array();
+        $keysToRemove = array();
+        foreach ($freshUntilKeys as $k => $v) {
+            if (empty($result[1][$k]) && (empty($result[0][$k]) || $result[0][$k] < time()-$outdatedFor)) {
+                $entriesToRemove[] = $v.':data';
+                $entriesToRemove[] = $v.':task';
+                $entriesToRemove[] = $v.':params';
+                $entriesToRemove[] = $v.':fresh_until';
+                $entriesToRemove[] = $v.':persistent';
+                $entriesToRemove[] = $v.':queue_fresh_until';
+                $entriesToRemove[] = $v.':queue_persistent';
+                $entriesToRemove[] = $v.':queue_tags';
+                $entriesToRemove[] = $v.':tags';
+                $entriesToRemove[] = $v.':temp';
+                $entriesToRemove[] = $v.':date_set';
+
+                $keysToRemove = $v;
+            }
+        }
+        $result = $this->predis->pipeline(function($pipe) use ($entriesToRemove, $keysToRemove) {
+            $pipe->multi();
+            $pipe->del($entriesToRemove);
+            $pipe->zrem('_queue', $keysToRemove);
+            $pipe->exec();
+        });
+        return !empty($result[3]);
+
     }
     
     

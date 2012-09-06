@@ -398,6 +398,8 @@ $config = array();
      */
     $config['connection'] = array(
         'prefix' => 'cc_', //prefix to use for the apc keys
+        'filterTags' => false, //false or array() of tags, only entries with one or more of these tags will be stored in APC
+        'filterRegex' => false, //false or regular expression as string ( e.g. "^(foo|ba[rz])_[0-9]{6,8}$" ) only those entries whose key matches that expression will be stored in APC
         'connectionClass' => '\\CacheQueue\\Connection\\Mongo', //class of the real connection to use (Mongo, MySQL, Redis, ..)
         'connectionFile' => 'CacheQueue/Connection/Mongo.php', //this file will be included to load the connection class. you can remove this if you use an autoloader
         'connectionConfig' => array( //the complete config-array of the real connection (Mongo, MySQL, Redis, ..) / example for Mongo:
