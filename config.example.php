@@ -470,7 +470,8 @@ $config = array();
     //FileLogger
     $config['logger'] = array(
         'file' => dirname(__FILE__).'/cachequeue_log.txt',
-        'showPid' => false //display the process ID in the logfile - useful when multiple workers are running
+        'showPid' => false, //display the process ID in the logfile - useful when multiple workers are running
+        'logLevel' => 6 // LOG_NONE = 0, LOG_DEBUG = 1, LOG_NOTICE = 2, LOG_ERROR = 4, LOG_ALL = 7 or a combination (LOG_ERROR and LOG_NOTICE = 6)
     );
 
     //GraylogLogger
@@ -480,7 +481,8 @@ $config = array();
         'graylogHostname' => 'graylog2.example.com',
         'graylogPort' => 12201,
         'host' => 'CacheQueueServer',
-        'showPid' => false //display the process ID in the logfile - useful when multiple workers are running
+        'showPid' => false, //display the process ID in the logfile - useful when multiple workers are running
+        'logLevel' => 6 // LOG_NONE = 0, LOG_DEBUG = 1, LOG_NOTICE = 2, LOG_ERROR = 4, LOG_ALL = 7 or a combination (LOG_ERROR and LOG_NOTICE = 6)
     );
      */
 

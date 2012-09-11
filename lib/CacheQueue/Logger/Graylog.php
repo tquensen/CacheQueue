@@ -7,6 +7,7 @@ class Graylog implements LoggerInterface
     private $graylogPort = null;
     private $host = '';
     private $showPid = false;
+    private $logLevel = 0;
     
     public function __construct($config = array())
     {
@@ -18,21 +19,28 @@ class Graylog implements LoggerInterface
         $this->host = $config['host'];
         $this->facility = !empty($config['facility']) ? $config['facility'] : 'CacheQueue';
         $this->showPid = !empty($config['showPid']);
+        $this->logLevel = !empty($config['logLevel']) ? $config['logLevel'] : self::LOG_NONE;
     }
 
     public function logError($text)
     {
-        $this->doLog($text, 3);
+        if ($this->logLevel & self::LOG_ERROR) {
+            $this->doLog($text, 3);
+        }
     }
 
     public function logNotice($text)
     {
-        $this->doLog($text, 5);
+        if ($this->logLevel & self::LOG_NOTICE) {
+            $this->doLog($text, 5);
+        }
     }
     
     public function logDebug($text)
     {
-        $this->doLog($text, 7);
+        if ($this->logLevel & self::LOG_DEBUG) {
+            $this->doLog($text, 7);
+        }
     }
     
     private function doLog($message, $level)

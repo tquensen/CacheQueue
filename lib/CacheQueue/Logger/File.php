@@ -5,26 +5,34 @@ class File implements LoggerInterface
 {
     private $file = null;
     private $showPid = false;
+    private $logLevel = 0;
     
     public function __construct($config = array())
     {
         $this->file = $config['file'];
         $this->showPid = !empty($config['showPid']);
+        $this->logLevel = !empty($config['logLevel']) ? $config['logLevel'] : self::LOG_NONE;
     }
 
     public function logError($text)
     {
-        $this->doLog($text, 'ERROR   ');
+        if ($this->logLevel & self::LOG_ERROR) {
+            $this->doLog($text, 'ERROR   ');
+        }
     }
 
     public function logNotice($text)
     {
-        $this->doLog($text, 'NOTICE  ');
+        if ($this->logLevel & self::LOG_NOTICE) {
+            $this->doLog($text, 'NOTICE  ');
+        }
     }
     
     public function logDebug($text)
     {
-        $this->doLog($text, 'DEBUG  ');
+        if ($this->logLevel & self::LOG_DEBUG) {
+            $this->doLog($text, 'DEBUG  ');
+        }
     }
     
     private function doLog($message, $level)

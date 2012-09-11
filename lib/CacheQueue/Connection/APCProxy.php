@@ -103,7 +103,7 @@ class APCProxy implements ConnectionInterface
     
     public function removeByTag($tag, $force = false, $persistent = null)
     {
-        if ($force && (!$this->filterTags || (!empty($tag) && array_intersect($this->filterTags, (array) $tag)))) {
+        if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
         }
         return $this->connection->removeByTag($tag, $force, $persistent);
@@ -125,7 +125,7 @@ class APCProxy implements ConnectionInterface
     
     public function outdateByTag($tag, $force = false, $persistent = null)
     {
-        if ($force && (!$this->filterTags || (!empty($tag) && array_intersect($this->filterTags, (array) $tag)))) {
+        if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
         }
         return $this->connection->outdateByTag($tag, $force, $persistent);
