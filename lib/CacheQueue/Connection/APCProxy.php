@@ -61,7 +61,7 @@ class APCProxy implements ConnectionInterface
     public function getValue($key, $onlyFresh = false)
     {
         $result = $this->get($key);
-        if (!$result || empty($result['data'])) {
+        if (!$result || !isset($result['data'])) {
             return false;
         }
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;

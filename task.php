@@ -29,7 +29,7 @@ if (empty($_SERVER['argv'][1])) {
 
 try {
     if (empty($_SERVER['argv'][2])) {
-        if ($_SERVER['argv'][1] == 'setup') {
+        if ($_SERVER['argv'][1] == 'setup' || $_SERVER['argv'][1] == 'status') {
             $key = null;
         } elseif ($_SERVER['argv'][1] == 'cleanup') {
             echo 'Error: outdated-time required as first parameter'."\n";
@@ -143,6 +143,11 @@ try {
                 echo 'Your current connection ('.get_class($connection).') has no setup-method;'."\n";
             }
             break;
+        case 'status':
+            echo 'CacheQueue status:'."\n";
+                $count = $connection->getQueueCount();
+                echo $count . ' entries in queue.'."\n";
+            break;    
         default:
             echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
             break;
@@ -176,6 +181,8 @@ Available Tasks:
                  (3600 = 1 hour, 86400 = 1 day, 604800 = 1 week)
     
     setup        run the setup-method of the connection class (if available)
+    
+    status       show status information (currently only queue count)
                  
 EOF;
 }

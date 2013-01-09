@@ -12,7 +12,7 @@ class Symfony
         chdir($dir);
         
         require_once($dir.'/config/ProjectConfiguration.class.php');
-        include(\sfCoreAutoload::getInstance()->getBaseDir().'/command/cli.php');
+        //include(\sfCoreAutoload::getInstance()->getBaseDir().'/command/cli.php');
 
         try
         {

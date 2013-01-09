@@ -4,9 +4,12 @@
 if (empty($_SERVER['argc'])) {
     die();
 }
-
+    
 //add CacheQueue parent folder to include path
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+
+//enable PHP 5.3+ garbage collection
+gc_enable();
 
 //define config file
 $configFile = dirname(__FILE__).'/config.php';
@@ -24,42 +27,43 @@ $logger = $factory->getLogger();
 $connection = $factory->getConnection();
 $worker = $factory->getWorker();
 
-//log a message after proceeding X tasks without pause
-$noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break
+
+//exit after proceeding X tasks
+$exitAfterTasksCount = 100; //exit after 100 Tasks without break
+
+$start = microtime(true);
+$time = 0;
+$processed = 0;
+$errors = 0;
 
 try {
-    $start = microtime(true);
-    $processed = 0;
-    $errors = 0;
-    do {
+
+    do {          
+        $ts = microtime(true);
         $status = null;
         try {
             if ($job = $worker->getJob()) {
                 $worker->work($job); 
             } else {
-                //pause processing for 1 sec if no queued task was found
+                //done, exit
                 break;
             }
         } catch (\CacheQueue\Exception\Exception $e) {
             //log CacheQueue exceptions 
             $errors++;
             $logger->logError('Worker: error '.(string) $e);
+            unset ($e);
         }
+
+
 
         $processed++;
-
-        if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
-            $end = microtime(true);
-            $count = $connection->getQueueCount();
-            $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($end-$start, 4,'.','')).'s so far...');
-        }
-    } while (true);
-    if ($processed) {
-        $end = microtime(true);
-        $logger->logNotice('Worker: finished, processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($end-$start, 4,'.','')).'s - ready for new tasks');
-    }
+        if ($exitAfterTasksCount && $processed >= $exitAfterTasksCount) {
+            break; //not finished, exiting anyway to prevent memory leaks...
+        }             
+    } while (true);       
 } catch (Exception $e) {
     //handle exceptions
     $logger->logError('Worker: Exception '.(string) $e);
-    exit;
 }
+echo "\n".$processed.'|'.$errors;

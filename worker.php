@@ -54,6 +54,7 @@ do {
                 //log CacheQueue exceptions 
                 $errors++;
                 $logger->logError('Worker: error '.(string) $e);
+                unset ($e);
             }
 
             

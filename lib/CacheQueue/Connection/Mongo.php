@@ -117,7 +117,7 @@ class Mongo implements ConnectionInterface
     public function getValue($key, $onlyFresh = false)
     {
         $result = $this->get($key);
-        if (!$result || empty($result['data'])) {
+        if (!$result || !isset($result['data'])) {
             return false;
         }
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
@@ -144,7 +144,7 @@ class Mongo implements ConnectionInterface
         $return['tags'] = !empty($result['value']['queue_tags']) ? $result['value']['queue_tags'] : null;
         $return['task'] = !empty($result['value']['task']) ? $result['value']['task'] : null;
         $return['params'] = !empty($result['value']['params']) ? $result['value']['params'] : null;
-        $return['data'] = !empty($result['value']['data']) ? $result['value']['data'] : null;
+        $return['data'] = isset($result['value']['data']) ? $result['value']['data'] : null;
         $return['temp'] = !empty($result['value']['temp']);
         $return['worker_id'] = $workerId;
         

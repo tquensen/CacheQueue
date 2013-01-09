@@ -39,6 +39,29 @@ class Basic implements ClientInterface
     {
         return $this->connection->queue(true, $task, $params, true, true, array(), $priority);
     }
+    
+    public function run($task, $params)
+    {
+
+        if (!$worker = $this->getWorker()) {
+            throw new Exception('no worker found');
+        }
+
+        $job = array(
+            'key' => false,
+            'fresh_until' => 0,
+            'persistent' => true,
+            'tags' => array(),
+            'task' => $task,
+            'params' => $params,
+            'data' => null,
+            'temp' => true,
+            'worker_id' => $worker->getWorkerId()
+        );
+
+        $data = $worker->executeTask($task, $params, $job);
+        return empty($data) ? false : $data;
+    }
 
     public function getOrSet($key, $callback, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false)
     {
@@ -69,7 +92,7 @@ class Basic implements ClientInterface
                 }
             }
         }
-        return empty($result['data']) ? false : $result['data'];
+        return !isset($result['data']) ? false : $result['data'];
     }
 
     public function getOrQueue($key, $task, $params, $freshFor, $force = false, $tags = array())
@@ -78,7 +101,7 @@ class Basic implements ClientInterface
         if (!$result || (!$result['is_fresh'] && !$result['queue_is_fresh']) || $force) {
             $this->queue($key, $task, $params, $freshFor, $force, $tags);
         }
-        return empty($result['data']) ? false : $result['data'];
+        return !isset($result['data']) ? false : $result['data'];
     }
     
     public function getOrRun($key, $task, $params, $freshFor, $force = false, $tags = array(), $lockFor = false, $lockTimeout = false)
@@ -96,14 +119,14 @@ class Basic implements ClientInterface
                 'tags' => $tags,
                 'task' => $task,
                 'params' => $params,
-                'data' => !empty($result['data']) ? $result['data'] : null,
+                'data' => isset($result['data']) ? $result['data'] : null,
                 'temp' => false,
                 'worker_id' => $worker->getWorkerId()
             );
             
             if ($lockFor === false) {
                 $data = $worker->work($job);
-                return empty($data) ? false : $data;
+                return !isset($data) ? false : $data;
             } else {
                 $lockKey = $this->connection->obtainLock($key, $lockFor, $lockTimeout !== false ? $lockTimeout : $lockFor);
                 if ($lockKey) {
@@ -124,7 +147,7 @@ class Basic implements ClientInterface
                 }
             }
         }
-        return empty($result['data']) ? false : $result['data'];
+        return !isset($result['data']) ? false : $result['data'];
     }
 
     public function outdate($key, $force = false, $persistent = null)

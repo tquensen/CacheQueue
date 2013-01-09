@@ -9,13 +9,13 @@ class Analytics
     private $token = null;
     private $tokenCacheKey = null;
     
-    private function initClient($clientKey, $clientSecret, $refresh_token, $connection, $logger)
+    private function initClient($applicationName, $clientKey, $clientSecret, $refresh_token, $connection, $logger)
     {
         require_once 'Google/apiClient.php';
         require_once 'Google/contrib/apiAnalyticsService.php';
 
         $client = new \apiClient();
-        $client->setApplicationName("t3n.de");
+        $client->setApplicationName($applicationName);
         $client->setClientId($clientKey);
         $client->setClientSecret($clientSecret);
         
@@ -48,6 +48,9 @@ class Analytics
 //        $tmp = explode('/', $url, 2);
 //        $path = '/'. (isset($tmp[1]) ? $tmp[1] : '');
         
+        if (empty($config['applicationName'])) {
+            $config['applicationName'] = 'unknown';
+        }
         
         $path = $params['pagePath'];
         $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].';' : '';
@@ -66,7 +69,7 @@ class Analytics
                     $bulkCacheData = $worker->getConnection()->get($bulkCacheKey);
                     if (!$bulkCacheData || !$bulkCacheData['is_fresh']) {
                         
-                        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+                        $service = $this->initClient($config['applicationName'], $config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
 
                         if ($logger = $worker->getLogger()) {
                             $logger->logDebug('Analytics getMetric ('.$metric.'): no BulkCache for '.$bulkCacheKey.', got lock '.$lockKey.' and fetching data');
@@ -193,7 +196,7 @@ class Analytics
                 $logger->logDebug('Analytics getMetric ('.$metric.') from BulkCache: '.(!empty($params['hostname']) ? 'Host='.$params['hostname'] . ' | ' : '').'Path='.$path.' | COUNT='.$count);
             }
         } else {
-            $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+            $service = $this->initClient($config['applicationName'], $config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
 
             $tries = 3;
             while(true) {
@@ -246,7 +249,11 @@ class Analytics
             throw new \Exception('parameters eventCategory, eventAction, profileId and refreshToken are required!');
         }
         
-        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+        if (empty($config['applicationName'])) {
+            $config['applicationName'] = 'unknown';
+        }
+        
+        $service = $this->initClient($config['applicationName'], $config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
@@ -297,6 +304,10 @@ class Analytics
             throw new \Exception('parameters, profileId and refreshToken are required!');
         }
         
+        if (empty($config['applicationName'])) {
+            $config['applicationName'] = 'unknown';
+        }
+        
         if (empty($params['pathPrefix'])) {
             $params['pathPrefix'] = '/';
         }
@@ -308,7 +319,7 @@ class Analytics
             $limit = !empty($config['count']) ? $config['count'] : 10;
         }
          
-        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+        $service = $this->initClient($config['applicationName'], $config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
@@ -368,6 +379,10 @@ class Analytics
             throw new \Exception('parameters, profileId and refreshToken are required!');
         }
         
+        if (empty($config['applicationName'])) {
+            $config['applicationName'] = 'unknown';
+        }
+        
         if (empty($params['pathPrefix'])) {
             $params['pathPrefix'] = '/';
         }
@@ -379,7 +394,7 @@ class Analytics
             $limit = !empty($config['count']) ? $config['count'] : 10;
         }
          
-        $service = $this->initClient($config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
+        $service = $this->initClient($config['applicationName'], $config['clientKey'], $config['clientSecret'], $params['refreshToken'], $worker->getConnection(), $worker->getLogger());
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : date('Y-m-d',  mktime(0, 0, 0, date('m')-1, date('d'), date('Y')));
         $dateTo = !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');

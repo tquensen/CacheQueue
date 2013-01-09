@@ -104,7 +104,7 @@ class MySQL implements ConnectionInterface
 
     public function get($key)
     {
-        $stmt = $this->stmtGet ?: $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE id = ? LIMIT 1');
+        $stmt = $this->stmtGet ?: $this->stmtGet = $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE id = ? LIMIT 1');
         if (!$stmt->execute(array($key))) {
             return false;
         }
@@ -130,7 +130,7 @@ class MySQL implements ConnectionInterface
         $return['tags'] = !empty($result['tags']) ? explode('##', mb_substr($result['tags'], 2, mb_strlen($result['tags']), 'UTF-8')) : array();
         $return['task'] = !empty($result['task']) ? $result['task'] : null;
         $return['params'] = !empty($result['params']) ? unserialize($result['params']) : null;
-        $return['data'] = !empty($result['data']) ? unserialize($result['data']) : false;
+        $return['data'] = isset($result['data']) ? unserialize($result['data']) : false;
 
         return $return;
     }
@@ -182,7 +182,7 @@ class MySQL implements ConnectionInterface
     public function getValue($key, $onlyFresh = false)
     {
         $result = $this->get($key);
-        if (!$result || empty($result['data'])) {
+        if (!$result || !isset($result['data'])) {
             return false;
         }
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
@@ -191,14 +191,14 @@ class MySQL implements ConnectionInterface
     public function getJob($workerId)
     {
         $this->db->beginTransaction();
-        $stmt = $this->stmtGetJob ?: $this->db->prepare('SELECT id, queue_fresh_until, queue_persistent, queue_tags, task, params, data, is_temp FROM '.$this->tableName.' WHERE queued = 1 ORDER BY queue_priority ASC LIMIT 1 FOR UPDATE');
+        $stmt = $this->stmtGetJob ?: $this->stmtGetJob = $this->db->prepare('SELECT id, queue_fresh_until, queue_persistent, queue_tags, task, params, data, is_temp FROM '.$this->tableName.' WHERE queued = 1 ORDER BY queue_priority ASC LIMIT 1 FOR UPDATE');
         $stmt->execute();
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (empty($result)) {
             $this->db->commit();
             return false;
         }
-        $stmt = $this->stmtUpdateJob ?: $this->db->prepare('UPDATE '.$this->tableName.' SET queued = 0, queued_worker = ? WHERE id = ?');
+        $stmt = $this->stmtUpdateJob ?: $this->stmtUpdateJob = $this->db->prepare('UPDATE '.$this->tableName.' SET queued = 0, queued_worker = ? WHERE id = ?');
         $stmt->execute(array($workerId, $result['id']));
         $this->db->commit();
         
@@ -210,7 +210,7 @@ class MySQL implements ConnectionInterface
         $return['tags'] = !empty($result['queue_tags']) ? explode('##', mb_substr($result['queue_tags'], 2, mb_strlen($result['queue_tags']), 'UTF-8')) : array();
         $return['task'] = !empty($result['task']) ? $result['task'] : null;
         $return['params'] = !empty($result['params']) ? unserialize($result['params']) : null;
-        $return['data'] = !empty($result['data']) ? unserialize($result['data']) : null;
+        $return['data'] = isset($result['data']) ? unserialize($result['data']) : null;
         $return['temp'] = !empty($result['is_temp']);
         $return['worker_id'] = $workerId;
         
@@ -219,7 +219,7 @@ class MySQL implements ConnectionInterface
     
     public function updateJobStatus($key, $workerId)
     {
-        $stmt = $this->stmtUpdateJobStatus ?: $this->db->prepare('UPDATE '.$this->tableName.' SET queued_worker = null, queue_fresh_until = 0, queue_persistent = 0 WHERE queued_worker = ? AND id = ?');
+        $stmt = $this->stmtUpdateJobStatus ?: $this->stmtUpdateJobStatus = $this->db->prepare('UPDATE '.$this->tableName.' SET queued_worker = null, queue_fresh_until = 0, queue_persistent = 0 WHERE queued_worker = ? AND id = ?');
         return $stmt->execute(array($workerId, $key));
     }
     
@@ -237,11 +237,11 @@ class MySQL implements ConnectionInterface
         
         try {
             $this->db->beginTransaction();
-            $stmt = $this->stmtSetGet ?: $this->db->prepare('SELECT id, fresh_until, persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
+            $stmt = $this->stmtSetGet ?: $this->stmtSetGet = $this->db->prepare('SELECT id, fresh_until, persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
             $stmt->execute(array($key));
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (empty($result)) {
-                $stmt = $this->stmtSetInsert ?: $this->db->prepare('INSERT INTO '.$this->tableName.' SET
+                $stmt = $this->stmtSetInsert ?: $this->stmtSetInsert = $this->db->prepare('INSERT INTO '.$this->tableName.' SET
                     id = ?,
                     fresh_until = ?,
                     persistent = ?,
@@ -255,7 +255,7 @@ class MySQL implements ConnectionInterface
             }
             
             if ($force || ($result['fresh_until'] < time() && empty($result['persistent']))) {
-                $stmt = $this->stmtSetUpdate ?: $this->db->prepare('UPDATE '.$this->tableName.' SET
+                $stmt = $this->stmtSetUpdate ?: $this->stmtSetUpdate = $this->db->prepare('UPDATE '.$this->tableName.' SET
                     fresh_until = ?,
                     persistent = ?,
                     data = ?,
@@ -299,11 +299,11 @@ class MySQL implements ConnectionInterface
         
         try {
             $this->db->beginTransaction();
-            $stmt = $this->stmtQueueGet ?: $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
+            $stmt = $this->stmtQueueGet ?: $this->stmtQueueGet = $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
             $stmt->execute(array($key));
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (empty($result)) {
-                $stmt = $this->stmtQueueInsert ?: $this->db->prepare('INSERT INTO '.$this->tableName.' SET
+                $stmt = $this->stmtQueueInsert ?: $this->stmtQueueInsert = $this->db->prepare('INSERT INTO '.$this->tableName.' SET
                     id = ?,
                     queue_fresh_until = ?,
                     queue_persistent = ?,
@@ -321,7 +321,7 @@ class MySQL implements ConnectionInterface
             }
             
             if ($force || ($result['fresh_until'] < time() && $result['queue_fresh_until'] < time() && empty($result['persistent']) && empty($result['queue_persistent']))) {
-                $stmt = $this->stmtQueueUpdate ?: $this->db->prepare('UPDATE '.$this->tableName.' SET
+                $stmt = $this->stmtQueueUpdate ?: $this->stmtQueueUpdate = $this->db->prepare('UPDATE '.$this->tableName.' SET
                     queue_fresh_until = ?,
                     queue_persistent = ?,
                     queued = 1,
@@ -349,7 +349,7 @@ class MySQL implements ConnectionInterface
 
     public function getQueueCount()
     {
-        $stmt = $this->stmtQueueCount ?: $this->db->prepare('SELECT COUNT(*) FROM '.$this->tableName.' WHERE queued = 1');
+        $stmt = $this->stmtQueueCount ?: $this->stmtQueueCount = $this->db->prepare('SELECT COUNT(*) FROM '.$this->tableName.' WHERE queued = 1');
         $stmt->execute();
         return $stmt->fetchColumn();
     }
@@ -514,7 +514,7 @@ class MySQL implements ConnectionInterface
         if ($lockKey === true) {
             return $this->remove($key.'._lock', true);
         }
-        $stmt = $this->stmtReleaseLock ?: $this->db->prepare('DELETE FROM '.$this->tableName. ' WHERE id = ? AND data = ?');
+        $stmt = $this->stmtReleaseLock ?: $this->stmtReleaseLock = $this->db->prepare('DELETE FROM '.$this->tableName. ' WHERE id = ? AND data = ?');
         $stmt->execute(array($key.'._lock', serialize($lockKey)));
         return true;
     }

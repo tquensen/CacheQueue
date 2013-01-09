@@ -65,6 +65,15 @@ interface ClientInterface
     public function queueTemporary($task, $params, $priority = 50);
 
     /**
+     * run a task and return the result
+     * 
+     * @param string $task the task to run
+     * @param mixed $params parameters for the task
+     * @return mixed the tasks response
+     */
+    public function run($task, $params);
+
+    /**
      * get the data for key from cache, run callback and store the data if its not fresh 
      * callback is called with three parameters:
      *  - mixed $params the $params parameter of the getOrSet call 
@@ -103,7 +112,7 @@ interface ClientInterface
      * @param string $task the task to run if the cached data was outdated
      * @param mixed $params parameters for the task
      * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
-     * @param bool $force true to force the queue even if the data is still fresh
+     * @param bool $force true to force running the task even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @param int|bool $lockFor locktime in seconds, ater that another lock can be obtained, if false, locks are ignored
      * @param float|bool $lockTimeout time to wait (in seconds, eg 0.05 for 50ms) for another lock to be released, if false, the $lockFor value is used

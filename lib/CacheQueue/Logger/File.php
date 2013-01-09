@@ -37,7 +37,7 @@ class File implements LoggerInterface
     
     private function doLog($message, $level)
     {
-        file_put_contents($this->file, date('[Y-m-d H.i:s] ').($this->showPid ? 'PID '.getmypid().' | ' : '').$level.' '.$message."\n", \FILE_APPEND);
+        file_put_contents($this->file, date('[Y-m-d H.i:s] ').($this->showPid ? 'PID '.getmypid().' | ' : '').$level.' '.$message."\n", \FILE_APPEND | \LOCK_EX);
     }
 
 }

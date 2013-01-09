@@ -60,7 +60,7 @@ class Redis implements ConnectionInterface
         $return['tags'] = !empty($result[7]) ? unserialize($result[7]) : array();
         $return['task'] = !empty($result[5]) ? $result[5] : null;
         $return['params'] = !empty($result[6]) ? $result[6] : null;
-        $return['data'] = !empty($result[0]) ? unserialize($result[0]) : false;
+        $return['data'] = isset($result[0]) ? unserialize($result[0]) : false;
 
         return $return;
     }
@@ -146,7 +146,7 @@ class Redis implements ConnectionInterface
             $entry['tags'] = !empty($results[$i+7]) ? unserialize($results[$i+7]) : array();
             $entry['task'] = !empty($results[$i+5]) ? $results[$i+5] : null;
             $entry['params'] = !empty($results[$i+6]) ? $results[$i+6] : null;
-            $entry['data'] = !empty($results[$i+0]) ? unserialize($results[$i+0]) : false;
+            $entry['data'] = isset($results[$i+0]) ? unserialize($results[$i+0]) : false;
             
             $return[] = $entry;
         }
@@ -158,7 +158,7 @@ class Redis implements ConnectionInterface
     public function getValue($key, $onlyFresh = false)
     {
         $result = $this->get($key);
-        if (!$result || empty($result['data'])) {
+        if (!$result || !isset($result['data'])) {
             return false;
         }
         return (!$onlyFresh || $result['is_fresh']) ? $result['data'] : false;
@@ -219,7 +219,7 @@ class Redis implements ConnectionInterface
         $return['persistent'] = !empty($result[1][1]);
         $return['task'] = !empty($result[1][2]) ? $result[1][2] : null;
         $return['params'] = !empty($result[1][3]) ? unserialize($result[1][3]) : null;
-        $return['data'] = !empty($result[1][4]) ? unserialize($result[1][4]) : null;
+        $return['data'] = isset($result[1][4]) ? unserialize($result[1][4]) : null;
         $return['tags'] = !empty($result[1][5]) ? unserialize($result[1][5]) : array();
         $return['temp'] = !empty($result[1][6]);
         $return['worker_id'] = $workerId;

@@ -105,10 +105,12 @@ $config = array();
      *                           bulkCacheSplitDays of 10 days or more, not recommended for ranges > 2 month
      * 
      * options:
+     *   'applicationName' => 'name of your application'
      *   'clientKey' => 'the client key'
      *   'clientSecret' => 'the client secret'
      */
     $config['tasks']['gametric'] = array('\\CacheQueue\\Task\\Analytics', 'getMetric', array(
+        'applicationName' => 'yourApp',
         'clientKey' => 'yourkey.apps.googleusercontent.com',
         'clientSecret' => 'YourClientSecret'
     ));
@@ -120,6 +122,7 @@ $config = array();
      * same as gametric task with metric 'pageviews'
      */
     $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
+        'applicationName' => 'yourApp',
         'clientKey' => 'yourkey.apps.googleusercontent.com',
         'clientSecret' => 'YourClientSecret'
     ));
@@ -131,6 +134,7 @@ $config = array();
      * same as gametric task with metric 'visits'
      */
     $config['tasks']['visits'] = array('\\CacheQueue\\Task\\Analytics', 'getVisits', array(
+        'applicationName' => 'yourApp',
         'clientKey' => 'yourkey.apps.googleusercontent.com',
         'clientSecret' => 'YourClientSecret'
     ));

@@ -1,10 +1,5 @@
 <?php
 namespace CacheQueue\Factory;
-
-use CacheQueue\Client\ClientInterface,
-    CacheQueue\Worker\WorkerInterface,
-    CacheQueue\Connection\ConnectionInterface,
-    CacheQueue\Logger\LoggerInterface;
         
 class Factory implements FactoryInterface
 {
