@@ -26,7 +26,7 @@ class Piwik
             $this->idSite = $config['idSite'];
         }
         
-        $requestUrl = rtrim($this->piwikUrl, '/').'/index.php?module=API&method=Actions.'.$params['action'].'&period='.$params['period'].'&date='.$params['date'].'&segment='.(isset($params['segment']) ? $params['segment'] : '').'&format=PHP&token_auth='.$this->token;
+        $requestUrl = rtrim($this->piwikUrl, '/').'/index.php?module=API&method=Actions.'.$params['action'].'&period='.$params['period'].'&date='.$params['date'].'&segment='.(isset($params['segment']) ? $params['segment'] : '').'&format=PHP&idSite='.$this->idSite.'&token_auth='.$this->token;
         
         if (!empty($params['parameter'])) {
             foreach ((array) $params['parameter'] as $k => $v) {
