@@ -38,6 +38,9 @@ class Piwik
         $responseData = @unserialize($response);
         
         if ($responseData) {
+            if (is_array($responseData) && isset($responseData['result']) && $responseData['result'] == 'error') {
+                throw new Exception('Piwik request failed: '.$responseData['message']);
+            }
             return !empty($params['returnSingle']) && is_array($responseData) ? reset($responseData) : $responseData;
         } else {
             return false;
