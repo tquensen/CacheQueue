@@ -10,7 +10,7 @@ class Piwik
     
     public function doAction($params, $config, $job, $worker)
     {
-        if (empty($config['token']) || empty($config['piwikUrl'])) {
+        if ((empty($config['token']) && empty($params['token'])) || empty($config['piwikUrl'])) {
             throw new \Exception('Config parameters token and piwikUrl are required!');
         }
         if (empty($params['action']) || empty($params['period']) || empty($params['date'])) {
@@ -18,7 +18,7 @@ class Piwik
         }
         
         $this->piwikUrl = $config['piwikUrl'];
-        $this->token = $config['token'];
+        $this->token = isset($params['token']) ? $params['token'] : $config['token'];
         
         if (!empty($params['idSite'])) {
             $this->idSite = $params['idSite'];

@@ -269,14 +269,15 @@ $config = array();
      *   'segment' => 'the segment to filter for (optional, see http://piwik.org/docs/analytics-api/segmentation/),
      *   'idSite' => 'the id of your site (optional, overwrites the idSite-option)',
      *   'parameter' => additional parameters for the API as string (url=foo&whatever=bar) or as array(key => value), optional / example: array('pageUrl' => 'http%3A%2F%2Fexample.com%2Fpath%2F', 'expanded' => '1')
-     *   'returnSingle' => true or false (optional, default=false) if true, returns only the first result row, useful for 1-row-responses like "getPageUrl", "getPageTitle" or with filter_truncate=0
+     *   'returnSingle' => true or false (optional, default=false) if true, returns only the first result row, useful for 1-row-responses like "getPageUrl", "getPageTitle" or with filter_truncate=0,
+     *   'token' => 'your API token (token_auth) (optional if the token is supplied as option)'
      * 
      * options:
      *   'piwikUrl' => 'url to your piwik installation'
-     *   'token' => 'your API token (token_auth)'
+     *   'token' => 'your API token (token_auth) (optional if the token is supplied as parameter)'
      *   'idSite' => 'id of your site' (default="all")
      */
-    $config['tasks']['gametric'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array(
+    $config['tasks']['piwik'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array(
         'piwikUrl' => 'https://piwik.example.com/',
         'token' => '1234518881c0d5289e5feb3b0795b696',
         //'idSite' => '1'
