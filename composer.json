@@ -1,0 +1,13 @@
+{
+    "name": "tqn/cache-queue",
+    "description": "CacheQueue.",
+    "authors": [
+        {
+            "name": "Thomas Quensen",
+            "email": "tquensen@gmail.com"
+        }
+    ],  
+    "require": {
+        
+    }
+}

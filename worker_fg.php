@@ -65,7 +65,8 @@ do {
     
     $end = microtime(true);
     if ($processed && (!$noticeAfterMoreThanSeconds || ($end - $start > $noticeAfterMoreThanSeconds))) {
-        $logger->logNotice('Worker: Processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s');
+        $queueCount = $connection->getQueueCount();
+        $logger->logNotice('Worker: Processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s. '.$queueCount.' tasks left (gc:'.gc_collect_cycles().')');
         $start = microtime(true);
         $processed = 0;
         $errors = 0;

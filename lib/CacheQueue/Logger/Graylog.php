@@ -11,7 +11,7 @@ class Graylog implements LoggerInterface
     
     public function __construct($config = array())
     {
-        if (!empty($config['gelfFile']) && !class_exists('\\GELFMessage', false)) {
+        if (!empty($config['gelfFile']) && !class_exists('\\GELFMessage')) {
             require_once($config['gelfFile']);
         }
         $this->graylogHostname = $config['graylogHostname'];

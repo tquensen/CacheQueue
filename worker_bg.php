@@ -30,17 +30,16 @@ $worker = $factory->getWorker();
 
 //exit after proceeding X tasks
 $exitAfterTasksCount = 100; //exit after 100 Tasks without break
+$exitAfterMoreThanSeconds = 60; //exit after 60 seconds without a break
+
 
 $start = microtime(true);
-$time = 0;
 $processed = 0;
 $errors = 0;
 
 try {
 
     do {          
-        $ts = microtime(true);
-        $status = null;
         try {
             if ($job = $worker->getJob()) {
                 $worker->work($job); 
@@ -58,9 +57,13 @@ try {
 
 
         $processed++;
+        $end = microtime(true);
         if ($exitAfterTasksCount && $processed >= $exitAfterTasksCount) {
             break; //not finished, exiting anyway to prevent memory leaks...
-        }             
+        } 
+        if ($processed && $exitAfterMoreThanSeconds && $end - $start > $exitAfterMoreThanSeconds) {
+            break; //not finished, exiting anyway to prevent memory leaks...
+        } 
     } while (true);       
 } catch (Exception $e) {
     //handle exceptions

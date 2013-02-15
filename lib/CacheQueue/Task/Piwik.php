@@ -28,6 +28,7 @@ class Piwik
         
         $requestUrl = rtrim($this->piwikUrl, '/').'/index.php?module=API&method=Actions.'.$params['action'].'&period='.$params['period'].'&date='.$params['date'].'&segment='.(isset($params['segment']) ? $params['segment'] : '').'&format=PHP&idSite='.$this->idSite.'&token_auth='.$this->token;
         
+        
         if (!empty($params['parameter'])) {
             foreach ((array) $params['parameter'] as $k => $v) {
                 $requestUrl .= '&'.(is_numeric($k) ? $v : $k.'='.$v);
@@ -41,8 +42,12 @@ class Piwik
             if (is_array($responseData) && isset($responseData['result']) && $responseData['result'] == 'error') {
                 throw new Exception('Piwik request failed: '.$responseData['message']);
             }
+            if ($logger = $worker->getLogger()) {
+                $logger->logDebug('Requesting Piwik URL '.$requestUrl.' successful.');
+            }
             return !empty($params['returnSingle']) && is_array($responseData) ? reset($responseData) : $responseData;
         } else {
+            throw new Exception('Requesting Piwik URL '.$requestUrl.' failed.');
             return false;
         }
         
