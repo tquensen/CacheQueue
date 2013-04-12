@@ -21,6 +21,13 @@ class Graylog implements LoggerInterface
         $this->showPid = !empty($config['showPid']);
         $this->logLevel = !empty($config['logLevel']) ? $config['logLevel'] : self::LOG_NONE;
     }
+    
+    public function logException($e)
+    {
+        if ($this->logLevel & self::LOG_ERROR) {
+            $this->doLog($e->getMessage(), 3, $e);
+        }
+    }
 
     public function logError($text)
     {
@@ -43,7 +50,7 @@ class Graylog implements LoggerInterface
         }
     }
     
-    private function doLog($message, $level)
+    private function doLog($message, $level, $exception = null)
     {
         $gelf = new \GELFMessage($this->graylogHostname, $this->graylogPort);
 
@@ -52,6 +59,12 @@ class Graylog implements LoggerInterface
         $gelf->setTimestamp(time());
         $gelf->setLevel($level);
         $gelf->setFacility($this->facility);
+        if ($exception) {
+            $gelf->setFullMessage((string) $exception);
+            $gelf->setFile($exception->getFile());
+            $gelf->setLine($exception->getLine());
+        }
+        
         $gelf->send();
     }
 

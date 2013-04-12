@@ -270,6 +270,7 @@ $config['tasks']['topkeywords'] = array('\\CacheQueue\\Task\\Analytics', 'getTop
  *   'piwikUrl' => 'url to your piwik installation'
  *   'token' => 'your API token (token_auth) (optional if the token is supplied as parameter)'
  *   'idSite' => 'id of your site' (default="all")
+ *   'timeout' => 'number of seconds for a connection to wait for response (optional, default=15)'
  */
 $config['tasks']['piwik'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array(
     'piwikUrl' => 'https://piwik.example.com/',

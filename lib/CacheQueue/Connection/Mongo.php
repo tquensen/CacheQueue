@@ -9,11 +9,11 @@ class Mongo implements ConnectionInterface
     private $db = null;
     private $collection = null;
     
-    private $safe = null;
+    private $w = null;
     
     public function __construct($config = array())
     {
-        $mongo = new \Mongo(!empty($config['server']) ? $config['server'] : 'mongodb://localhost:27017', !empty($config['dboptions']) ? $config['dboptions'] : array());
+        $mongo = new \MongoClient(!empty($config['server']) ? $config['server'] : 'mongodb://localhost:27017', !empty($config['dboptions']) ? $config['dboptions'] : array());
 
         $this->dbName = !empty($config['database']) ? $config['database'] : 'cachequeue';
         $this->collectionName = !empty($config['collection']) ? $config['collection'] : 'cache';
@@ -21,18 +21,18 @@ class Mongo implements ConnectionInterface
         $this->db = $mongo->{$this->dbName};
         $this->collection = $this->db->{$this->collectionName};
         
-        $this->safe = !empty($config['safe']) ? true : false;
+        $this->w = isset($config['w']) ? $config['w'] : 1;
     }
     
     public function setup()
     {
-        $this->collection->ensureIndex(array('queued' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('fresh_until' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('queue_fresh_until' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('persistent' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('queue_persistent' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('tags' => 1), array('safe' => true));
-        $this->collection->ensureIndex(array('queue_priority' => 1), array('safe' => true));
+        $this->collection->ensureIndex(array('queued' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('fresh_until' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('queue_fresh_until' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('persistent' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('queue_persistent' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('tags' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('queue_priority' => 1), array('w' => $this->w));
     }
 
     public function get($key)
@@ -164,7 +164,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
         }  catch (\MongoCursorException $e) {
             if ($e->getCode() == 11000) {
@@ -199,7 +199,7 @@ class Mongo implements ConnectionInterface
                         'tags' => $tags,
                         'date_set' => new \MongoDate()
                     )),
-                    array('upsert' => true, 'safe' => $this->safe)
+                    array('upsert' => true, 'w' => $this->w)
                 );
             } else {
                 return (bool) $this->collection->update(
@@ -221,7 +221,7 @@ class Mongo implements ConnectionInterface
                         'tags' => $tags,
                         'date_set' => new \MongoDate()
                     )),
-                    array('upsert' => true, 'safe' => $this->safe)
+                    array('upsert' => true, 'w' => $this->w)
                 );
             }
         } catch (\MongoCursorException $e) {
@@ -270,7 +270,7 @@ class Mongo implements ConnectionInterface
                         'temp' => $temp,
                         'queue_priority' => $priority
                     )),
-                    array('upsert' => true, 'safe' => $this->safe)
+                    array('upsert' => true, 'w' => $this->w)
                 );
             } else {
                 return (bool) $this->collection->update(
@@ -309,7 +309,7 @@ class Mongo implements ConnectionInterface
                         'temp' => $temp,
                         'queue_priority' => $priority
                     )),
-                    array('upsert' => true, 'safe' => $this->safe)
+                    array('upsert' => true, 'w' => $this->w)
                 );
             }
         }  catch (\MongoCursorException $e) {
@@ -339,7 +339,7 @@ class Mongo implements ConnectionInterface
                             array('persistent' => null)
                         )
                     ),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
         } else {
             if ($persistent !== null) {
@@ -348,14 +348,14 @@ class Mongo implements ConnectionInterface
                         '_id' => $key,
                         'persistent' => (bool) $persistent
                     ),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
             } else {
                 return (bool) $this->collection->remove(
                     array(
                         '_id' => $key
                     ),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
             }
 
@@ -377,7 +377,7 @@ class Mongo implements ConnectionInterface
                         ),
                         'tags' => array('$in' => $tags)
                     ),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
         } else {
             if ($persistent !== null) {
@@ -386,12 +386,12 @@ class Mongo implements ConnectionInterface
                         'persistent' => (bool) $persistent,
                         'tags' => array('$in' => $tags)
                     ),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             } else {
                 return (bool) $this->collection->remove(
                     array('tags' => array('$in' => $tags)),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             }
 
@@ -411,7 +411,7 @@ class Mongo implements ConnectionInterface
                             array('persistent' => null)
                         )
                     ),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
         } else {
             if ($persistent !== null) {
@@ -419,12 +419,12 @@ class Mongo implements ConnectionInterface
                     array(
                         'persistent' => (bool) $persistent
                     ),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             } else {
                 return (bool) $this->collection->remove(
                     array(),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             }
 
@@ -447,7 +447,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
         } else {
             if ($persistent !== null) {
@@ -463,7 +463,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
             } else {
                 return (bool) $this->collection->update(
@@ -477,7 +477,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe)
+                    array('w' => $this->w)
                 );
             }
 
@@ -501,7 +501,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
         } else {
             if ($persistent !== null) {
@@ -517,7 +517,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             } else {
                 return (bool) $this->collection->update(
@@ -531,7 +531,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             }
 
@@ -553,7 +553,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
         } else {
             if ($persistent !== null) {
@@ -568,7 +568,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             } else {
                 return (bool) $this->collection->update(
@@ -581,7 +581,7 @@ class Mongo implements ConnectionInterface
                         'queue_persistent' => false,
                         'queued' => false
                     )),
-                    array('safe' => $this->safe, 'multiple' => true)
+                    array('w' => $this->w, 'multiple' => true)
                 );
             }
 
@@ -600,7 +600,7 @@ class Mongo implements ConnectionInterface
                         array('persistent' => null)
                     )
                 ),
-                array('safe' => $this->safe, 'multiple' => true)
+                array('w' => $this->w, 'multiple' => true, 'timeout' => 0)
             );
     }
 
@@ -632,7 +632,7 @@ class Mongo implements ConnectionInterface
                 '_id' => $key.'._lock',
                 'data' => $lockKey
             ),
-            array('safe' => $this->safe)
+            array('w' => $this->w)
         );
         return true;
     }

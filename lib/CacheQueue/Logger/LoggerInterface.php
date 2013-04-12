@@ -16,4 +16,6 @@ interface LoggerInterface
     public function logNotice($text);
     
     public function logError($text);
+    
+    public function logException($e);
 }

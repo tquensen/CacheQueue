@@ -114,7 +114,7 @@ class Basic implements ClientInterface
 
             $job = array(
                 'key' => $key,
-                'fresh_until' => $freshFor === true ? 0 : time()-$freshFor,
+                'fresh_until' => $freshFor === true ? 0 : time()+$freshFor,
                 'persistent' => $freshFor === true,
                 'tags' => $tags,
                 'task' => $task,

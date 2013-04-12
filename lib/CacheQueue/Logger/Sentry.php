@@ -37,6 +37,13 @@ class Sentry implements LoggerInterface
         }
     }
 
+    public function logException($e)
+    {
+        if ($this->logLevel & self::LOG_ERROR) {
+            $this->doLogException($e, \Raven_Client::ERROR);
+        }
+    }
+    
     public function logError($text)
     {
         if ($this->logLevel & self::LOG_ERROR) {
@@ -76,13 +83,22 @@ class Sentry implements LoggerInterface
         $this->ravenClient = new \Raven_Client($this->sentryDSN, $this->options);
     }
     
-    private function doLog($message, $level)
+    private function doLog($message, $level, $e)
     {
         if (empty($this->ravenClient)) {
             $this->initClient();
         }
         
         $this->ravenClient->captureMessage(($this->showPid ? 'PID '.getmypid().' | ' : '').$message, array(), $level);
+    }
+    
+    private function doLogException($e, $level)
+    {
+        if (empty($this->ravenClient)) {
+            $this->initClient();
+        }
+        
+        $this->ravenClient->captureException($e, array('level' => $level));
     }
     
 }

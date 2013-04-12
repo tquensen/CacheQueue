@@ -55,11 +55,11 @@ do {
         } 
     } catch (\CacheQueue\Exception\Exception $e) {
         //log CacheQueue exceptions 
-        $logger->logError('Queue: error '.(string)$e);
+        $logger->logException($e);
         unset ($e);
     } catch (Exception $e) {
         //handle exceptions
-        $logger->logError('Queue: Exception '.(string) $e);
+        $logger->logException($e);
         exit;
     }
     

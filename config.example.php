@@ -29,9 +29,9 @@ include 'taskconfig.php';
         //'server' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://localhost:27017' (see http://de3.php.net/manual/en/mongo.construct.php)
         'database' => 'cache_queue',
         'collection' => 'cache',
-        'safe' => true,
+        'w' => 1,
         'dboptions' => array(
-            //'timeout' => 2000,
+            //'wTimeout' => 2000,
             //'username' => 'username',
             //'password' => 'password'
         )

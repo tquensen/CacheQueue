@@ -33,6 +33,12 @@ $noticeAfterMoreThanSeconds = 30;
 //log a message after proceeding X tasks without pause
 $noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break
 
+if (in_array('--debug', $argv)) {
+    $debug = true;
+} else {
+    $debug = false;
+}
+
 $start = microtime(true);
 $time = 0;
 $processed = 0;
@@ -45,15 +51,18 @@ do {
             $status = null;
             try {
                 if ($job = $worker->getJob()) {
+                    if ($debug) echo 'running job '.$job['key']. ' ('.$job['task'].')'."\n";
                     $worker->work($job); 
+                    if ($debug) echo 'done...'."\n";
                 } else {
                     //pause processing for 1 sec if no queued task was found
                     break;
                 }
             } catch (\CacheQueue\Exception\Exception $e) {
                 //log CacheQueue exceptions 
+                if ($debug) echo $e."\n";
                 $errors++;
-                $logger->logError('Worker: error '.(string) $e);
+                $logger->logException($e);
                 unset ($e);
             }
 
@@ -79,7 +88,8 @@ do {
         }
     } catch (Exception $e) {
         //handle exceptions
-        $logger->logError('Worker: Exception '.(string) $e);
+        if ($debug) echo $e."\n";
+        $logger->logException($e);
         exit;
     }
     sleep(1); 

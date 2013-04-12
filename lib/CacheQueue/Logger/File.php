@@ -14,6 +14,13 @@ class File implements LoggerInterface
         $this->logLevel = !empty($config['logLevel']) ? $config['logLevel'] : self::LOG_NONE;
     }
 
+    public function logException($e)
+    {
+        if ($this->logLevel & self::LOG_ERROR) {
+            $this->doLog((string) $e, 'EXCEPTION');
+        }
+    }
+    
     public function logError($text)
     {
         if ($this->logLevel & self::LOG_ERROR) {

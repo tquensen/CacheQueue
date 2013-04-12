@@ -32,6 +32,8 @@ $worker = $factory->getWorker();
 $exitAfterTasksCount = 100; //exit after 100 Tasks without break
 $exitAfterMoreThanSeconds = 60; //exit after 60 seconds without a break
 
+//log a "status" message if a single task takes longer than X seconds
+$noticeSlowTaskMoreThanSeconds = 5;
 
 $start = microtime(true);
 $processed = 0;
@@ -39,10 +41,16 @@ $errors = 0;
 
 try {
 
-    do {          
+    do {     
+        
         try {
             if ($job = $worker->getJob()) {
+                $jobStart = microtime(true);
                 $worker->work($job); 
+                $jobEnd = microtime(true);
+                if ($jobEnd - $jobStart > $noticeSlowTaskMoreThanSeconds) {
+                    $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') took '.(number_format($jobEnd - $jobStart, 4,'.','')).'s.');
+                }
             } else {
                 //done, exit
                 break;
@@ -50,12 +58,10 @@ try {
         } catch (\CacheQueue\Exception\Exception $e) {
             //log CacheQueue exceptions 
             $errors++;
-            $logger->logError('Worker: error '.(string) $e);
+            $logger->logException($e);
             unset ($e);
         }
-
-
-
+        
         $processed++;
         $end = microtime(true);
         if ($exitAfterTasksCount && $processed >= $exitAfterTasksCount) {
@@ -67,6 +73,6 @@ try {
     } while (true);       
 } catch (Exception $e) {
     //handle exceptions
-    $logger->logError('Worker: Exception '.(string) $e);
+    $logger->logException($e);
 }
 echo "\n".$processed.'|'.$errors;
