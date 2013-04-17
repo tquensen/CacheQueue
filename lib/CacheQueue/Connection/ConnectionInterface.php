@@ -79,11 +79,28 @@ interface ConnectionInterface
     public function getQueueCount();
     
     /**
+     * get the number of matching entries
+     * 
+     * @param bool|null $fresh if true, only fresh entries are counted, if false, only outdated entries are counted, null (default) to count all entries
+     * @param bool|null $persistent true to count only persistent entries (implies fresh=true), false to count only nonpersistent entries (useless for fresh=false), null (default) to count both persistent and nonpersistent entries
+     */
+    public function countAll($fresh = null, $persistent = null);
+    
+    /**
+     * get the number of matching entries
+     * 
+     * @param array|string $tag multiple tags used to find the entries to remove
+     * @param bool|null $fresh if true, only fresh entries are counted, if false, only outdated entries are counted, null (default) to count all entries
+     * @param bool|null $persistent true to count only persistent entries (implies fresh=true), false to count only nonpersistent entries (useless for fresh=false), null (default) to count both persistent and nonpersistent entries
+     */
+    public function countByTag($tag, $fresh = null, $persistent = null);
+    
+    /**
      * removes an entry from cache
      * 
      * @param string $key the key of the entry to remove from cache
      * @param bool $force if false (default), the entry will only be removed if it is outdated and non persistent 
-     * @param type $persistent only used if force=true. if true, the entry will be removed only if it is persistent, if false only if it is non-persistent, if null (default) if will be removed regardless of the persistent state
+     * @param bool|null $persistent only used if force=true. if true, the entry will be removed only if it is persistent, if false only if it is non-persistent, if null (default) if will be removed regardless of the persistent state
      * @return bool if the request was successful 
      */
     public function remove($key, $force = false, $persistent = null);
@@ -92,7 +109,7 @@ interface ConnectionInterface
      * removes all entries from cache
      * 
      * @param bool $force if false (default), only fresh, non persistent entries will be removed 
-     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @param bool|null $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
      * @return bool if the request was successful 
      */
     public function removeAll($force = false, $persistent = null);
@@ -102,7 +119,7 @@ interface ConnectionInterface
      * 
      * @param array|string $tag multiple tags used to find the entries to remove
      * @param bool $force if false (default), only fresh, non persistent entries will be removed 
-     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @param bool|null $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
      * @return bool if the request was successful 
      */
     public function removeByTag($tag, $force = false, $persistent = null);

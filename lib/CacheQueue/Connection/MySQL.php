@@ -151,7 +151,6 @@ class MySQL implements ConnectionInterface
         }
         
         
-        $stmt = $this->db->query($query);
         if (!$stmt = $this->db->query($query)) {
             return false;
         }
@@ -350,6 +349,87 @@ class MySQL implements ConnectionInterface
     public function getQueueCount()
     {
         $stmt = $this->stmtQueueCount ?: $this->stmtQueueCount = $this->db->prepare('SELECT COUNT(*) FROM '.$this->tableName.' WHERE queued = 1');
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+    
+    public function countAll($fresh = null, $persistent = null)
+    {
+        $query = 'SELECT COUNT(*) as num FROM '.$this->tableName.'';
+        
+        
+        if ($fresh === null) {
+            if ($persistent !== null) {
+                $query .= ' WHERE (persistent = '.((int) $persistent).')';
+            }
+        } else {
+            if ($persistent === false) {
+                if ($fresh) {
+                    $query .= ' WHERE (fresh_until > NOW() AND persistent = 0)';
+                } else {
+                    $query .= ' WHERE (fresh_until <= NOW() AND persistent = 0)';
+                }
+            } elseif($persistent === true) {
+                if ($fresh) {
+                    $query .= ' WHERE (persistent = 1)';
+                } else {
+                    return 0;
+                }
+            } else {
+                if ($fresh) {
+                    $query .= ' WHERE (fresh_until > NOW() OR persistent = 1)';
+                } else {
+                    $query .= ' WHERE (fresh_until <= NOW() AND persistent = 0)';
+                }
+            }
+        }
+        
+        
+        if (!$stmt = $this->db->query($query)) {
+            return false;
+        }
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+    
+    public function countByTag($tag, $fresh = null, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        
+        $query = 'SELECT COUNT(*) as num FROM '.$this->tableName.' WHERE';
+        
+        $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
+        
+        if ($fresh === null) {
+            if ($persistent !== null) {
+                $query .= ' AND (persistent = '.((int) $persistent).')';
+            }
+        } else {
+            if ($persistent === false) {
+                if ($fresh) {
+                    $query .= ' AND (fresh_until > NOW() AND persistent = 0)';
+                } else {
+                    $query .= ' AND (fresh_until <= NOW() AND persistent = 0)';
+                }
+            } elseif($persistent === true) {
+                if ($fresh) {
+                    $query .= ' AND (persistent = 1)';
+                } else {
+                    return 0;
+                }
+            } else {
+                if ($fresh) {
+                    $query .= ' AND (fresh_until > NOW() OR persistent = 1)';
+                } else {
+                    $query .= ' AND (fresh_until <= NOW() AND persistent = 0)';
+                }
+            }
+        }
+        
+        
+        if (!$stmt = $this->db->query($query)) {
+            return false;
+        }
         $stmt->execute();
         return $stmt->fetchColumn();
     }

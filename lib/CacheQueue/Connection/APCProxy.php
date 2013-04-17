@@ -95,6 +95,17 @@ class APCProxy implements ConnectionInterface
         return $this->connection->getQueueCount();
     }
     
+    public function countAll($fresh = null, $persistent = null)
+    {
+        return $this->connection->countAll($fresh, $persistent);
+    }
+
+    public function countByTag($tag, $fresh = null, $persistent = null)
+    {
+        return $this->connection->countByTag($tag, $fresh, $persistent);
+    }
+
+    
     public function remove($key, $force = false, $persistent = null)
     {
         if (apc_exists($this->prefix.$key)) apc_delete($this->prefix.$key);

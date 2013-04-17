@@ -325,6 +325,154 @@ class Mongo implements ConnectionInterface
         return $this->collection->count(array('queued' => true));
     }
     
+    public function countAll($fresh = null, $persistent = null)
+    {
+        if ($fresh === null) {
+            if ($persistent !== null) {
+                return (int) $this->collection->count(
+                    array(
+                        'persistent' => $persistent,
+                    )
+                );
+            } else {
+                return (int) $this->collection->count(
+                    array(
+                    )
+                );
+            }
+        } else {
+            if ($persistent === false) {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            'fresh_until' => array('$gte' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                } else {
+                    return (int) $this->collection->count(
+                        array(
+                            'fresh_until' => array('$lt' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                }
+            } elseif($persistent === true) {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            'persistent' => true
+                        )
+                    );
+                } else {
+                    return 0;
+                }
+            } else {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            '$or' => array(
+                                array(
+                                    'fresh_until' => array('$gte' => new \MongoDate())
+                                ),
+                                array(
+                                    'persistent' => true
+                                )
+                            )
+                        )
+                    );
+                } else {
+                    return (int) $this->collection->count(
+                        array(
+                            'fresh_until' => array('$lt' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                }
+                
+            }
+
+        }
+    }
+    
+    public function countByTag($tag, $fresh = null, $persistent = null)
+    {
+        $tags = array_values((array) $tag);
+        if ($fresh === null) {
+            if ($persistent !== null) {
+                return (int) $this->collection->count(
+                    array(
+                        'persistent' => $persistent,
+                        'tags' => array('$in' => $tags)
+                    )
+                );
+            } else {
+                return (int) $this->collection->count(
+                    array(
+                        'tags' => array('$in' => $tags)
+                    )
+                );
+            }
+        } else {
+            if ($persistent === false) {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            'tags' => array('$in' => $tags),
+                            'fresh_until' => array('$gte' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                } else {
+                    return (int) $this->collection->count(
+                        array(
+                            'tags' => array('$in' => $tags),
+                            'fresh_until' => array('$lt' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                }
+            } elseif($persistent === true) {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            'tags' => array('$in' => $tags),
+                            'persistent' => true
+                        )
+                    );
+                } else {
+                    return 0;
+                }
+            } else {
+                if ($fresh) {
+                    return (int) $this->collection->count(
+                        array(
+                            'tags' => array('$in' => $tags),
+                            '$or' => array(
+                                array(
+                                    'fresh_until' => array('$gte' => new \MongoDate())
+                                ),
+                                array(
+                                    'persistent' => true
+                                )
+                            )
+                        )
+                    );
+                } else {
+                    return (int) $this->collection->count(
+                        array(
+                            'tags' => array('$in' => $tags),
+                            'fresh_until' => array('$lt' => new \MongoDate()),
+                            'persistent' => false
+                        )
+                    );
+                }
+                
+            }
+
+        }
+    }
+    
     public function remove($key, $force = false, $persistent = null)
     {
         if (!$force) {

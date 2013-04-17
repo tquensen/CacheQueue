@@ -407,6 +407,16 @@ class Redis implements ConnectionInterface
         return $this->predis->zcard('_queue');
     }
     
+    public function countAll($fresh = null, $persistent = null)
+    {
+        return 0;
+    }
+
+    public function countByTag($tag, $fresh = null, $persistent = null)
+    {
+        return 0;
+    }
+    
     public function remove($key, $force = false, $persistent = null)
     {
 

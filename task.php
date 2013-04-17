@@ -29,9 +29,11 @@ if (empty($_SERVER['argv'][1])) {
 
 try {
     if (empty($_SERVER['argv'][2])) {
-        if ($_SERVER['argv'][1] == 'setup' || $_SERVER['argv'][1] == 'status') {
+        if (strtolower($_SERVER['argv'][1]) == 'setup' || strtolower($_SERVER['argv'][1]) == 'status') {
             $key = null;
-        } elseif ($_SERVER['argv'][1] == 'cleanup') {
+        } elseif (strtolower($_SERVER['argv'][1]) == 'count') {
+            $key = 'ALL';
+        } elseif (strtolower($_SERVER['argv'][1]) == 'cleanup') {    
             echo 'Error: outdated-time required as first parameter'."\n";
             echo 'Examples:'."\n";
             echo 'cleanup 3600'."\t".'removes all entries that are outdated for at least 1 hour'."\n";
@@ -53,29 +55,66 @@ try {
         $tag = trim($_SERVER['argv'][3]);
         $option = !empty($_SERVER['argv'][4]) ? $_SERVER['argv'][4] : null;
     } else {
-        $option = !empty($_SERVER['argv'][3]) ? $_SERVER['argv'][3] : null;
+        if (strtolower($_SERVER['argv'][1]) == 'count') {
+            $option = !empty($_SERVER['argv'][2]) ? $_SERVER['argv'][2] : null;
+        } else {
+            $option = !empty($_SERVER['argv'][3]) ? $_SERVER['argv'][3] : null;
+        }
     }
     if (!empty($option)) {
-        switch (strtolower(trim($option))) {
-            case 'force':
-                $force = true;
-                $persistent = null;
-                break;
-            case 'persistent':
-                $force = true;
-                $persistent = true;
-                break;
-            case 'nonpersistent':
-                $force = true;
-                $persistent = false;
-                break;
-            default:
-                echo 'Unknown option "'.$option.'", valid options are "force", "persistent" and "nonpersistent" '."\n";
-                exit;
+        if (strtolower($_SERVER['argv'][1]) == 'count') {
+            switch (strtolower(trim($option))) {
+                case 'fresh':
+                    $fresh = true;
+                    $persistent = null;
+                    break;
+                case 'outdated':
+                    $fresh = false;
+                    $persistent = null;
+                    break;
+                case 'persistent':
+                    $fresh = null;
+                    $persistent = true;
+                    break;
+                case 'nonpersistent':
+                    $fresh = null;
+                    $persistent = false;
+                    break;
+                case 'fresh-nonpersistent':
+                    $fresh = true;
+                    $persistent = false;
+                    break;
+                default:
+                    echo 'Unknown option "'.$option.'", valid options are "fresh", "outdated", "persistent", "nonpersistent" and "fresh-nonpersistent" '."\n";
+                    exit;
+            }
+        } else {
+            switch (strtolower(trim($option))) {
+                case 'force':
+                    $force = true;
+                    $persistent = null;
+                    break;
+                case 'persistent':
+                    $force = true;
+                    $persistent = true;
+                    break;
+                case 'nonpersistent':
+                    $force = true;
+                    $persistent = false;
+                    break;
+                default:
+                    echo 'Unknown option "'.$option.'", valid options are "force", "persistent" and "nonpersistent" '."\n";
+                    exit;
+            }
         }
     } else {
-        $force = false;
-        $persistent = null;
+        if (strtolower($_SERVER['argv'][1]) == 'count') {
+            $fresh = null;
+            $persistent = null;
+        } else {
+            $force = false;
+            $persistent = null;
+        }
     }
 
     switch (strtolower($_SERVER['argv'][1])) {
@@ -105,6 +144,15 @@ try {
                     echo "\t".'queue fresh until: '.($data['queue_persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['queue_fresh_until']))."\n";
                     echo "\t".'data:       '.print_r($data['data'], true)."\n";
                 }     
+            }
+            break;
+        case 'count':
+            if (trim(strtolower($key)) == 'tag') {
+                $count = $connection->countByTag($tag, $fresh, $persistent);
+                echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n"; 
+            } else {
+                $count = $connection->countAll($fresh, $persistent);
+                echo $count.($option ? ' '.$option : '').' entries found.'."\n"; 
             }
             break;
         case 'remove':      
@@ -156,6 +204,8 @@ try {
     echo 'Error: '.$e."\n";
 }
 
+echo "\n";
+
 function print_help()
 {
     echo <<<EOF
@@ -176,7 +226,17 @@ Available Tasks:
                  if "force", outdates any entries regardless of freshness or persistent state
                  if "persistent", outdates only matching persistent entries
                  if "nonpersistent", outdates only non persistent entries
-                 
+    
+    count TAG [tag] [fresh|outdated|persistent|nonpersistent|fresh-nonpersistent]
+        gets the number of all matching entries (or all matching entries with the TAG [tag])
+        options: if no option is given, all entries are counted
+                 if "fresh", only fresh (or persistent) entries are counted
+                 if "outdated", only outdated, non-persistent entries are counted
+                 if "persistent", only persistent entries are counted
+                 if "nonpersistent", only non-persistent entries are counted (either fresh or outdated)
+                 if "fresh-nonpersistent", only fresh, non-persistent entries are counted
+    
+    
     cleanup SEC  removes all cached entries that are outdated for at least SEC seconds
                  (3600 = 1 hour, 86400 = 1 day, 604800 = 1 week)
     

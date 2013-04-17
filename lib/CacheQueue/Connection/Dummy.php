@@ -53,6 +53,17 @@ class Dummy implements ConnectionInterface
         return 0;
     }
     
+    public function countAll($fresh = null, $persistent = null)
+    {
+        return 0;
+    }
+
+    public function countByTag($tag, $fresh = null, $persistent = null)
+    {
+        return 0;
+    }
+
+    
     public function remove($key, $force = false, $persistent = null)
     {
         return false;
