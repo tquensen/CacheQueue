@@ -31,8 +31,6 @@ try {
     if (empty($_SERVER['argv'][2])) {
         if (strtolower($_SERVER['argv'][1]) == 'setup' || strtolower($_SERVER['argv'][1]) == 'status') {
             $key = null;
-        } elseif (strtolower($_SERVER['argv'][1]) == 'count') {
-            $key = 'ALL';
         } elseif (strtolower($_SERVER['argv'][1]) == 'cleanup') {    
             echo 'Error: outdated-time required as first parameter'."\n";
             echo 'Examples:'."\n";
@@ -55,11 +53,7 @@ try {
         $tag = trim($_SERVER['argv'][3]);
         $option = !empty($_SERVER['argv'][4]) ? $_SERVER['argv'][4] : null;
     } else {
-        if (strtolower($_SERVER['argv'][1]) == 'count') {
-            $option = !empty($_SERVER['argv'][2]) ? $_SERVER['argv'][2] : null;
-        } else {
-            $option = !empty($_SERVER['argv'][3]) ? $_SERVER['argv'][3] : null;
-        }
+        $option = !empty($_SERVER['argv'][3]) ? $_SERVER['argv'][3] : null;
     }
     if (!empty($option)) {
         if (strtolower($_SERVER['argv'][1]) == 'count') {
@@ -147,12 +141,15 @@ try {
             }
             break;
         case 'count':
-            if (trim(strtolower($key)) == 'tag') {
-                $count = $connection->countByTag($tag, $fresh, $persistent);
-                echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n"; 
-            } else {
+            if (trim(strtolower($key)) == 'all') {
                 $count = $connection->countAll($fresh, $persistent);
                 echo $count.($option ? ' '.$option : '').' entries found.'."\n"; 
+            } else {
+                if (strtolower($key) != 'tag') {
+                    $tag = $key;
+                }
+                $count = $connection->countByTag($tag, $fresh, $persistent);
+                echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n"; 
             }
             break;
         case 'remove':      
@@ -227,7 +224,7 @@ Available Tasks:
                  if "persistent", outdates only matching persistent entries
                  if "nonpersistent", outdates only non persistent entries
     
-    count TAG [tag] [fresh|outdated|persistent|nonpersistent|fresh-nonpersistent]
+    count ALL|TAG [tag] [fresh|outdated|persistent|nonpersistent|fresh-nonpersistent]
         gets the number of all matching entries (or all matching entries with the TAG [tag])
         options: if no option is given, all entries are counted
                  if "fresh", only fresh (or persistent) entries are counted
@@ -243,6 +240,7 @@ Available Tasks:
     setup        run the setup-method of the connection class (if available)
     
     status       show status information (currently only queue count)
-                 
+
+
 EOF;
 }
