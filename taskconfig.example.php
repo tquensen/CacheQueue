@@ -31,6 +31,7 @@ $config['tasks']['loadurl'] = array('\\CacheQueue\\Task\\Misc', 'loadUrl');
 
 /*
  * get the retweets of a url
+ * 
  * params:
  * the absolute URL to get twitter retweets for as string
  */
@@ -52,13 +53,20 @@ $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes'
 
 /*
  * get twitter timeline
+ * you need a twitter app to use this.
+ * https://dev.twitter.com/
  * 
  * params:
  * an array with
- *   'account' => 'the twitter account name'
+ *   'screen_name' => 'the twitter screen_name (optional if user_id is provided)''
+ *   'user_id' => 'the twitter user_id (optional if screen_name is provided)'
  *   'limit' => 'max number of results (optional, default 30)'
  *   'filter' => 'a regular expression to fiter the tweets for (optional, default none)' //example: "/#blog/i"
  *   'update' => 'true to keep old entries if not enough new data, false to completely overwrite old data. (optional, default false)'
+ * 
+ * options:
+ *   'consumerKey' => 'the consumer key of your twitter application'
+ *   'consukerSecret' => 'the consumer secret of your twitter application'
  */
 $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline');
 

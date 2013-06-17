@@ -94,6 +94,11 @@ class Dummy implements ConnectionInterface
         return false;
     }
     
+    public function clearQueue()
+    {
+        return false;
+    }
+    
     public function releaseLock($key, $lockKey)
     {
         return false;

@@ -26,13 +26,13 @@ class Mongo implements ConnectionInterface
     
     public function setup()
     {
-        $this->collection->ensureIndex(array('queued' => 1), array('w' => $this->w));
-        $this->collection->ensureIndex(array('fresh_until' => 1), array('w' => $this->w));
-        $this->collection->ensureIndex(array('queue_fresh_until' => 1), array('w' => $this->w));
-        $this->collection->ensureIndex(array('persistent' => 1), array('w' => $this->w));
-        $this->collection->ensureIndex(array('queue_persistent' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('queued' => 1, 'queue_priority' => 1), array('w' => $this->w));
+
+        $this->collection->ensureIndex(array('fresh_until' => 1, 'tags' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('persistent' => 1, 'tags' => 1), array('w' => $this->w));
+        $this->collection->ensureIndex(array('persistent' => 1, 'fresh_until' => 1, 'tags' => 1), array('w' => $this->w));
+
         $this->collection->ensureIndex(array('tags' => 1), array('w' => $this->w));
-        $this->collection->ensureIndex(array('queue_priority' => 1), array('w' => $this->w));
     }
 
     public function get($key)
@@ -70,13 +70,14 @@ class Mongo implements ConnectionInterface
         if ($onlyFresh) {
             $results = $this->collection->find(
                 array(
-                    'tags' => array('$in' => $tags),
                     '$or' => array(
                         array(
-                            'fresh_until' => array('$gte' => new \MongoDate())
+                            'fresh_until' => array('$gte' => new \MongoDate()),
+                            'tags' => array('$in' => $tags)
                         ),
                         array(
-                            'persistent' => true
+                            'persistent' => true,
+                            'tags' => array('$in' => $tags)
                         )
                     )
                 )
@@ -335,25 +336,37 @@ class Mongo implements ConnectionInterface
                     )
                 );
             } else {
+                //or is slow with count, and as these queries are XOR, simple addition will do the jobs
+                /*
                 return (int) $this->collection->count(
                     array(
+                        '$or' => array(
+                            array(
+                                'persistent' => false
+                            ),
+                            array(
+                                'persistent' => true
+                            )
+                        )
                     )
                 );
+                */
+                return (int) $this->collection->count(array('persistent' => false)) + (int) $this->collection->count(array('persistent' => true));
             }
         } else {
             if ($persistent === false) {
                 if ($fresh) {
                     return (int) $this->collection->count(
                         array(
-                            'fresh_until' => array('$gte' => new \MongoDate()),
-                            'persistent' => false
+                            'persistent' => false,
+                            'fresh_until' => array('$gte' => new \MongoDate())
                         )
                     );
                 } else {
                     return (int) $this->collection->count(
                         array(
-                            'fresh_until' => array('$lt' => new \MongoDate()),
-                            'persistent' => false
+                            'persistent' => false,
+                            'fresh_until' => array('$lt' => new \MongoDate())
                         )
                     );
                 }
@@ -369,6 +382,7 @@ class Mongo implements ConnectionInterface
                 }
             } else {
                 if ($fresh) {
+                    /*
                     return (int) $this->collection->count(
                         array(
                             '$or' => array(
@@ -381,11 +395,13 @@ class Mongo implements ConnectionInterface
                             )
                         )
                     );
+                     */
+                    return (int) $this->collection->count(array('persistent' => false, 'fresh_until' => array('$gte' => new \MongoDate()))) + (int) $this->collection->count(array('persistent' => true));
                 } else {
                     return (int) $this->collection->count(
                         array(
-                            'fresh_until' => array('$lt' => new \MongoDate()),
-                            'persistent' => false
+                            'persistent' => false,
+                            'fresh_until' => array('$lt' => new \MongoDate())
                         )
                     );
                 }
@@ -407,28 +423,40 @@ class Mongo implements ConnectionInterface
                     )
                 );
             } else {
+                /*
                 return (int) $this->collection->count(
                     array(
-                        'tags' => array('$in' => $tags)
+                        '$or' => array(
+                            array(
+                                'persistent' => false,
+                                'tags' => array('$in' => $tags)
+                            ),
+                            array(
+                                'persistent' => true,
+                                'tags' => array('$in' => $tags)
+                            )
+                        )
                     )
                 );
+                 */
+                return (int) $this->collection->count(array('persistent' => false, 'tags' => array('$in' => $tags))) + (int) $this->collection->count(array('persistent' => true, 'tags' => array('$in' => $tags)));
             }
         } else {
             if ($persistent === false) {
                 if ($fresh) {
                     return (int) $this->collection->count(
                         array(
-                            'tags' => array('$in' => $tags),
+                            'persistent' => false,
                             'fresh_until' => array('$gte' => new \MongoDate()),
-                            'persistent' => false
+                            'tags' => array('$in' => $tags)
                         )
                     );
                 } else {
                     return (int) $this->collection->count(
                         array(
-                            'tags' => array('$in' => $tags),
+                            'persistent' => false,
                             'fresh_until' => array('$lt' => new \MongoDate()),
-                            'persistent' => false
+                            'tags' => array('$in' => $tags)   
                         )
                     );
                 }
@@ -436,8 +464,8 @@ class Mongo implements ConnectionInterface
                 if ($fresh) {
                     return (int) $this->collection->count(
                         array(
-                            'tags' => array('$in' => $tags),
-                            'persistent' => true
+                            'persistent' => true,
+                            'tags' => array('$in' => $tags)
                         )
                     );
                 } else {
@@ -445,25 +473,29 @@ class Mongo implements ConnectionInterface
                 }
             } else {
                 if ($fresh) {
+                    /*
                     return (int) $this->collection->count(
                         array(
-                            'tags' => array('$in' => $tags),
                             '$or' => array(
                                 array(
-                                    'fresh_until' => array('$gte' => new \MongoDate())
+                                    'fresh_until' => array('$gte' => new \MongoDate()),
+                                    'tags' => array('$in' => $tags)
                                 ),
                                 array(
-                                    'persistent' => true
+                                    'persistent' => true,
+                                    'tags' => array('$in' => $tags)
                                 )
                             )
                         )
                     );
+                     */
+                    return (int) $this->collection->count(array('persistent' => false, 'fresh_until' => array('$gte' => new \MongoDate()), 'tags' => array('$in' => $tags))) + (int) $this->collection->count(array('persistent' => true, 'tags' => array('$in' => $tags)));
                 } else {
                     return (int) $this->collection->count(
                         array(
-                            'tags' => array('$in' => $tags),
+                            'persistent' => false,
                             'fresh_until' => array('$lt' => new \MongoDate()),
-                            'persistent' => false
+                            'tags' => array('$in' => $tags)
                         )
                     );
                 }
@@ -518,12 +550,15 @@ class Mongo implements ConnectionInterface
                     array(
                         '$or' => array(
                             array(
+                                'persistent' => false,
                                 'fresh_until' => array('$lt' => new \MongoDate()),
-                                'persistent' => false
+                                'tags' => array('$in' => $tags)
                                 ),
-                            array('persistent' => null)
-                        ),
-                        'tags' => array('$in' => $tags)
+                            array(
+                                'persistent' => null,
+                                'tags' => array('$in' => $tags)
+                                )
+                        )
                     ),
                     array('w' => $this->w, 'multiple' => true)
                 );
@@ -553,8 +588,8 @@ class Mongo implements ConnectionInterface
                     array(
                         '$or' => array(
                             array(
-                                'fresh_until' => array('$lt' => new \MongoDate()),
-                                'persistent' => false
+                                'persistent' => false,
+                                'fresh_until' => array('$lt' => new \MongoDate())
                                 ),
                             array('persistent' => null)
                         )
@@ -638,8 +673,8 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->update(
                     array(
-                        'fresh_until' => array('$gt' => new \MongoDate()),
                         'persistent' => false,
+                        'fresh_until' => array('$gt' => new \MongoDate()),
                         'tags' => array('$in' => $tags)
                     ),
                     array('$set' => array(
@@ -691,8 +726,8 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->update(
                     array(
-                        'fresh_until' => array('$gt' => new \MongoDate()),
-                        'persistent' => false
+                        'persistent' => false,
+                        'fresh_until' => array('$gt' => new \MongoDate())
                     ),
                     array('$set' => array(
                         'fresh_until' => new \MongoDate(time() - 1),
@@ -736,16 +771,35 @@ class Mongo implements ConnectionInterface
         }
     }
     
+    public function clearQueue()
+    {
+        return (bool) $this->collection->update(
+            array(
+                'queued' => true
+            ),
+            array('$set' => array(
+                'queue_fresh_until' => new \MongoDate(time() - 1),
+                'queue_persistent' => false,
+                'queued' => false
+            )),
+            array('w' => $this->w, 'multiple' => true)
+        );
+    }
+    
     public function cleanup($outdatedFor = 0)
     {
         return (bool) $this->collection->remove(
                 array(
                     '$or' => array(
                         array(
+                            'persistent' => false,
                             'fresh_until' => array('$lt' => new \MongoDate(time()-$outdatedFor)),
-                            'persistent' => false
+                            'queued' => false
                             ),
-                        array('persistent' => null)
+                        array(
+                            'persistent' => null,
+                            'queued' => false
+                        )
                     )
                 ),
                 array('w' => $this->w, 'multiple' => true, 'timeout' => 0)

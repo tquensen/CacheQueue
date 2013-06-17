@@ -564,6 +564,18 @@ class MySQL implements ConnectionInterface
         return $stmt->execute($values);
     }
     
+    public function clearQueue()
+    {
+        $query = 'UPDATE '.$this->tableName.' SET
+            queue_fresh_until = 0,
+            queue_persistent = 0,
+            queued = 0
+            WHERE queued = 1 ';
+        
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute(array());
+    }
+    
     public function cleanup($outdatedFor = 0)
     {
         $query = 'DELETE FROM '.$this->tableName.' WHERE fresh_until < ? and persistent != 1';

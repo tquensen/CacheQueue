@@ -1048,6 +1048,11 @@ class Redis implements ConnectionInterface
         }
     }
     
+    public function clearQueue()
+    {
+        return $this->predis->del('_queue');
+    }
+    
     public function cleanup($outdatedFor = 0)
     {
         $keys = $this->predis->keys($this->prefix.'*');

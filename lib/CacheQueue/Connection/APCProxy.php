@@ -150,6 +150,12 @@ class APCProxy implements ConnectionInterface
         return $this->connection->outdateAll($force, $persistent);
     }
     
+    public function clearQueue()
+    {
+        return $this->connection->clearQueue();
+    }
+
+    
     public function cleanup($outdatedFor = 0)
     {
         apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));

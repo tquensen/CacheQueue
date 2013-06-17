@@ -154,6 +154,13 @@ interface ConnectionInterface
     public function outdateByTag($tag, $force = false, $persistent = null);
     
     /**
+     * resets the queue status for all queued entries
+     * 
+     * @return bool if the request was successful 
+     */
+    public function clearQueue();
+    
+    /**
      * removes all entries which are outdated for a specific time
      * 
      * @param int $outdatedFor remove only those entries that are outdated for at lease this number of seconde (default = 0)

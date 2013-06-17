@@ -29,8 +29,10 @@ if (empty($_SERVER['argv'][1])) {
 
 try {
     if (empty($_SERVER['argv'][2])) {
-        if (strtolower($_SERVER['argv'][1]) == 'setup' || strtolower($_SERVER['argv'][1]) == 'status') {
+        if (strtolower($_SERVER['argv'][1]) == 'setup' || strtolower($_SERVER['argv'][1]) == 'clearqueue' || strtolower($_SERVER['argv'][1]) == 'status') {
             $key = null;
+        } elseif (strtolower($_SERVER['argv'][1]) == 'count') {
+            $key = 'ALL';    
         } elseif (strtolower($_SERVER['argv'][1]) == 'cleanup') {    
             echo 'Error: outdated-time required as first parameter'."\n";
             echo 'Examples:'."\n";
@@ -188,10 +190,18 @@ try {
                 echo 'Your current connection ('.get_class($connection).') has no setup-method;'."\n";
             }
             break;
+        case 'clearqueue':
+            $status = $connection->clearQueue();
+            echo 'Removing all entries from Queue: '.($status ? 'OK' : 'ERROR')."\n";
+            break;        
         case 'status':
             echo 'CacheQueue status:'."\n";
-                $count = $connection->getQueueCount();
-                echo $count . ' entries in queue.'."\n";
+                $queueCount = $connection->getQueueCount();
+                $entryCount = $connection->countAll();
+                $freshCount = $connection->countAll(true);
+                $outdatedCount = $connection->countAll(false);
+                echo $entryCount . ' cached entries ('.$freshCount.' fresh, '.$outdatedCount.' outdated).'."\n";
+                echo $queueCount . ' tasks currently in queue.'."\n";
             break;    
         default:
             echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
@@ -233,13 +243,14 @@ Available Tasks:
                  if "nonpersistent", only non-persistent entries are counted (either fresh or outdated)
                  if "fresh-nonpersistent", only fresh, non-persistent entries are counted
     
+    clearqueue   removes all entries from queue
     
     cleanup SEC  removes all cached entries that are outdated for at least SEC seconds
                  (3600 = 1 hour, 86400 = 1 day, 604800 = 1 week)
     
     setup        run the setup-method of the connection class (if available)
     
-    status       show status information (currently only queue count)
+    status       show status information
 
 
 EOF;
