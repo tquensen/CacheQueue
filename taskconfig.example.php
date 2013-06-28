@@ -24,7 +24,7 @@ $config['tasks']['store'] = array('\\CacheQueue\\Task\\Misc', 'store');
  * an array of
  *   'url' => 'the absolute URL (or anything which is readable by fopen) to get the content from (see http://www.php.net/manual/en/wrappers.php)'
  *   'context' => '(optional), an array of context options to use or false/null to nut use a context (see http://www.php.net/manual/en/function.stream-context-create.php)'
- *   'format' => '(optional), only valid option is json - when set, the response is processed by json_decode before saved'
+ *   'format' => '(optional), either 'json' to json_decode the value before saved, or 'xml' to docode as xml and save as SimpleXMLElement'
  *   'disableErrorLog' => (optional) true to not log errors (url not found, 404 error, ..)
  */
 $config['tasks']['loadurl'] = array('\\CacheQueue\\Task\\Misc', 'loadUrl');
@@ -58,7 +58,7 @@ $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes'
  * 
  * params:
  * an array with
- *   'screen_name' => 'the twitter screen_name (optional if user_id is provided)''
+ *   'screen_name' => 'the twitter screen_name (optional if user_id is provided)'
  *   'user_id' => 'the twitter user_id (optional if screen_name is provided)'
  *   'limit' => 'max number of results (optional, default 30)'
  *   'filter' => 'a regular expression to fiter the tweets for (optional, default none)' //example: "/#blog/i"
@@ -68,7 +68,10 @@ $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes'
  *   'consumerKey' => 'the consumer key of your twitter application'
  *   'consukerSecret' => 'the consumer secret of your twitter application'
  */
-$config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline');
+$config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline', array(
+    'consumerKey' => 'the consumer key of your twitter application',
+    'consukerSecret' => 'the consumer secret of your twitter application'
+));
 
 /*
  * oAuth2 / API v3 version!
@@ -222,7 +225,7 @@ $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls
  * oAuth2 / API v3 version!
  * 
  * get list of keywords with the most pageviews
- you need a registered oAuth2 application on the server/task side,
+ * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
  * this task requires the Google api client library in your include_path!
@@ -284,6 +287,35 @@ $config['tasks']['piwik'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array
     'piwikUrl' => 'https://piwik.example.com/',
     'token' => '1234518881c0d5289e5feb3b0795b696',
     //'idSite' => '1'
+));
+
+/*
+ * call the mailchimp api
+ * 
+ * @see http://apidocs.mailchimp.com/api/1.3/ or look at the PHPDOC in MCAPI.class.php
+ * 
+ * params:
+ * an array with
+ *  'method' => 'the API method to call',
+ *  'parameter' => required parameter for the method (optional, depends on method)
+ *                  as array('parameter_name' => 'parameter_value')
+ *                  see http://apidocs.mailchimp.com/api/1.3/#method-&-error-code-docs
+ *
+ *  'apiKey' => 'your mailchimp api key' (optional, overwrites the apiKey option)
+ *  'secure' => bool, default = false / Whether or not this should use a secure connection (optional, overwrites the secure option)
+ *  'timeout' => 'server call timeout in seconds, default=300'  (optional, overwrites the timeout option)
+ * 
+ * options:
+ *   'apiKey' => 'your mailchimp api key'
+ *   'secure' => bool, default = false / Whether or not this should use a secure connection (optional)
+ *   'timeout' => 'server call timeout in seconds, default=300' (optional)
+ *   'MCAPIFile' => 'location of the MCAPI.class.php file to include (optional if an autoloader is used)
+ */
+$config['tasks']['mailchimp'] = array('\\CacheQueue\\Task\\MailChimp', 'execute', array(
+    'apiKey' => 'your mailchimp api key',
+    'secure' => false,
+    'timeout' => 300,
+    'MCAPIFile' => 'MailChimp/MCAPI.class.php'
 ));
 
 /*
