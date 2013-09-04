@@ -32,7 +32,7 @@ class Basic implements WorkerInterface
             
             $task = $job['task'];
             $params = $job['params'];
-            $freshUntil = $job['persistent'] ? true : $job['fresh_until'];
+            $freshUntil = $job['fresh_until'];
             $temp = !empty($job['temp']);
 
             if (empty($this->tasks[$task])) {
@@ -44,7 +44,7 @@ class Basic implements WorkerInterface
             if ($temp) {
                 $this->connection->remove($job['key'], true);
             } elseif ($result !== null) {
-                $this->connection->set($job['key'], $result, $freshUntil === true ? $freshUntil : $freshUntil-time(), false, $job['tags']);
+                $this->connection->set($job['key'], $result, $freshUntil-time(), false, $job['tags']);
             }
             
             $this->connection->updateJobStatus($job['key'], $job['worker_id']);

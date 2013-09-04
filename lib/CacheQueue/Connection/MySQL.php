@@ -58,6 +58,8 @@ class MySQL implements ConnectionInterface
      */
     private $stmtReleaseLock = null;
     
+    private $useFulltextTags = null;
+    
     public function __construct($config = array())
     {
         
@@ -68,6 +70,8 @@ class MySQL implements ConnectionInterface
         }
 
         $this->tableName = !empty($config['table']) ? $config['table'] : 'cache';
+        
+        $this->useFulltextTags = !empty($config['useFulltextTags']);
     }
     
     public function setup()
@@ -75,12 +79,10 @@ class MySQL implements ConnectionInterface
         $this->db->query('CREATE TABLE '.$this->tableName.' (
             id VARCHAR(250),
             fresh_until BIGINT NOT NULL DEFAULT 0,
-            persistent TINYINT(1) NOT NULL DEFAULT 0,
             tags VARCHAR(250) NOT NULL DEFAULT "",
             queued TINYINT(1) NOT NULL DEFAULT 0,
             queued_worker INT(11),
             queue_fresh_until BIGINT NOT NULL DEFAULT 0,
-            queue_persistent TINYINT(1) NOT NULL DEFAULT 0,
             queue_tags VARCHAR(250) NOT NULL DEFAULT "",
             queue_priority INT(11) NOT NULL DEFAULT 0,
             date_set BIGINT NOT NULL DEFAULT 0,
@@ -90,12 +92,8 @@ class MySQL implements ConnectionInterface
             data LONGBLOB,
             PRIMARY KEY (id),
             INDEX fresh_until (fresh_until),
-            INDEX persistent (persistent),
-            INDEX queued (queued),
-            INDEX queue_fresh_until (queue_fresh_until),
-            INDEX queue_persistent (queue_persistent),
-            INDEX queue_priority (queue_priority),
-            INDEX tags (tags)
+            INDEX queued (queued, queue_priority),
+            '.($this->useFulltextTags ? 'FULLTEXT (tags) ' : 'INDEX tags (tags)').'
             ) ENGINE=INNODB DEFAULT CHARSET=utf8
             '
         );
@@ -104,7 +102,7 @@ class MySQL implements ConnectionInterface
 
     public function get($key)
     {
-        $stmt = $this->stmtGet ?: $this->stmtGet = $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE id = ? LIMIT 1');
+        $stmt = $this->stmtGet ?: $this->stmtGet = $this->db->prepare('SELECT id, fresh_until, queue_fresh_until, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE id = ? LIMIT 1');
         if (!$stmt->execute(array($key))) {
             return false;
         }
@@ -119,15 +117,17 @@ class MySQL implements ConnectionInterface
         $return['key'] = $result['id'];
         //$return['queued'] = !empty($result['queued']);
         $return['fresh_until'] = !empty($result['fresh_until']) ? $result['fresh_until'] : 0;
-        $return['persistent'] = !empty($result['persistent']);
-        $return['is_fresh'] = $return['persistent'] || $return['fresh_until'] > time();
+        $return['is_fresh'] = $return['fresh_until'] > time();
 
         $return['date_set'] = !empty($result['date_set']) ? $result['date_set'] : 0;
         
         $return['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until'] : 0;
-        $return['queue_persistent'] = !empty($result['queue_persistent']);
-        $return['queue_is_fresh'] = $return['queue_persistent'] || $return['queue_fresh_until'] > time();
-        $return['tags'] = !empty($result['tags']) ? explode('##', mb_substr($result['tags'], 2, mb_strlen($result['tags']), 'UTF-8')) : array();
+        $return['queue_is_fresh'] = $return['queue_fresh_until'] > time();
+        if ($this->useFulltextTags) {
+            $return['tags'] = !empty($result['tags']) ? explode('##', mb_substr($result['tags'], 2, mb_strlen($result['tags']), 'UTF-8')) : array();
+        } else {
+            $return['tags'] = !empty($result['tags']) ? explode(' ', $result['tags']) : array();
+        }
         $return['task'] = !empty($result['task']) ? $result['task'] : null;
         $return['params'] = !empty($result['params']) ? unserialize($result['params']) : null;
         $return['data'] = isset($result['data']) ? unserialize($result['data']) : false;
@@ -142,12 +142,17 @@ class MySQL implements ConnectionInterface
         $tags = array_values((array) $tag);
         $return = array();
         
-        $query = 'SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE';
+        $query = 'SELECT id, fresh_until, queue_fresh_until, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE';
         
-        $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+        } else {
+            $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
+        }
         
         if ($onlyFresh) {
-            $query .= ' AND (fresh_until > NOW() OR persistent = 1)';
+            $query .= ' AND fresh_until > '.time();
         }
         
         
@@ -159,15 +164,17 @@ class MySQL implements ConnectionInterface
             $entry['key'] = $result['id'];
             //$return['queued'] = !empty($result['queued']);
             $entry['fresh_until'] = !empty($result['fresh_until']) ? $result['fresh_until'] : 0;
-            $entry['persistent'] = !empty($result['persistent']);
-            $entry['is_fresh'] = $entry['persistent'] || $entry['fresh_until'] > time();
+            $entry['is_fresh'] = $entry['fresh_until'] > time();
 
             $entry['date_set'] = !empty($result['date_set']) ? $result['date_set'] : 0;
 
             $entry['queue_fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until'] : 0;
-            $entry['queue_persistent'] = !empty($result['queue_persistent']);
-            $entry['queue_is_fresh'] = $entry['queue_persistent'] || $entry['queue_fresh_until'] > time();
-            $entry['tags'] = !empty($entry['tags']) ? explode('##', mb_substr($entry['tags'], 2, mb_strlen($entry['tags']), 'UTF-8')) : array();
+            $entry['queue_is_fresh'] = $entry['queue_fresh_until'] > time();
+            if ($this->useFulltextTags) {
+                $entry['tags'] = !empty($result['tags']) ? explode('##', mb_substr($result['tags'], 2, mb_strlen($result['tags']), 'UTF-8')) : array();
+            } else {
+                $entry['tags'] = !empty($result['tags']) ? explode(' ', $result['tags']) : array();
+            }
             $entry['task'] = !empty($result['task']) ? $result['task'] : null;
             $entry['params'] = !empty($result['params']) ? unserialize($result['params']) : null;
             $entry['data'] = isset($result['data']) ? unserialize($result['data']) : false;
@@ -190,7 +197,7 @@ class MySQL implements ConnectionInterface
     public function getJob($workerId)
     {
         $this->db->beginTransaction();
-        $stmt = $this->stmtGetJob ?: $this->stmtGetJob = $this->db->prepare('SELECT id, queue_fresh_until, queue_persistent, queue_tags, task, params, data, is_temp FROM '.$this->tableName.' WHERE queued = 1 ORDER BY queue_priority ASC LIMIT 1 FOR UPDATE');
+        $stmt = $this->stmtGetJob ?: $this->stmtGetJob = $this->db->prepare('SELECT id, queue_fresh_until, queue_tags, task, params, data, is_temp FROM '.$this->tableName.' WHERE queued = 1 ORDER BY queue_priority ASC LIMIT 1 FOR UPDATE');
         $stmt->execute();
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (empty($result)) {
@@ -205,8 +212,11 @@ class MySQL implements ConnectionInterface
         
         $return['key'] = $result['id'];
         $return['fresh_until'] = !empty($result['queue_fresh_until']) ? $result['queue_fresh_until'] : 0;
-        $return['persistent'] = !empty($result['queue_persistent']);
-        $return['tags'] = !empty($result['queue_tags']) ? explode('##', mb_substr($result['queue_tags'], 2, mb_strlen($result['queue_tags']), 'UTF-8')) : array();
+        if ($this->useFulltextTags) {
+            $return['tags'] = !empty($result['queue_tags']) ? explode('##', mb_substr($result['queue_tags'], 2, mb_strlen($result['queue_tags']), 'UTF-8')) : array();
+        } else {
+            $return['tags'] = !empty($result['queue_tags']) ? explode(' ', $result['queue_tags']) : array();
+        }
         $return['task'] = !empty($result['task']) ? $result['task'] : null;
         $return['params'] = !empty($result['params']) ? unserialize($result['params']) : null;
         $return['data'] = isset($result['data']) ? unserialize($result['data']) : null;
@@ -218,51 +228,48 @@ class MySQL implements ConnectionInterface
     
     public function updateJobStatus($key, $workerId)
     {
-        $stmt = $this->stmtUpdateJobStatus ?: $this->stmtUpdateJobStatus = $this->db->prepare('UPDATE '.$this->tableName.' SET queued_worker = null, queue_fresh_until = 0, queue_persistent = 0 WHERE queued_worker = ? AND id = ?');
+        $stmt = $this->stmtUpdateJobStatus ?: $this->stmtUpdateJobStatus = $this->db->prepare('UPDATE '.$this->tableName.' SET queued_worker = null, queue_fresh_until = 0, WHERE queued_worker = ? AND id = ?');
         return $stmt->execute(array($workerId, $key));
     }
     
     public function set($key, $data, $freshFor, $force = false, $tags = array())
     {
-        if ($freshFor === true) {
-            $freshUntil = 0;
-            $persistent = 1;
-        } else {
-            $freshUntil = time() + $freshFor;
-            $persistent = 0;
-        }
+        $freshUntil = time() + $freshFor;
         
         $tags = array_values((array) $tags);
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+        } else {
+            $tags = !empty($tags) ? '##'.implode('##', $tags) : '';
+        }
         
         try {
             $this->db->beginTransaction();
-            $stmt = $this->stmtSetGet ?: $this->stmtSetGet = $this->db->prepare('SELECT id, fresh_until, persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
+            $stmt = $this->stmtSetGet ?: $this->stmtSetGet = $this->db->prepare('SELECT id, fresh_until FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
             $stmt->execute(array($key));
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (empty($result)) {
                 $stmt = $this->stmtSetInsert ?: $this->stmtSetInsert = $this->db->prepare('INSERT INTO '.$this->tableName.' SET
                     id = ?,
                     fresh_until = ?,
-                    persistent = ?,
                     data = ?,
                     date_set = ?,
                     tags = ?
                     ');
-                $stmt->execute(array($key, $freshUntil, $persistent, serialize($data), time(), !empty($tags) ? '##'.implode('##', $tags) : ''));
+                $stmt->execute(array($key, $freshUntil, serialize($data), time(), $tags));
                 $this->db->commit();
                 return true;
             }
             
-            if ($force || ($result['fresh_until'] < time() && empty($result['persistent']))) {
+            if ($force || $result['fresh_until'] < time()) {
                 $stmt = $this->stmtSetUpdate ?: $this->stmtSetUpdate = $this->db->prepare('UPDATE '.$this->tableName.' SET
                     fresh_until = ?,
-                    persistent = ?,
                     data = ?,
                     date_set = ?,
                     tags = ?
                     WHERE id = ?
                     ');
-                $stmt->execute(array($freshUntil, $persistent, serialize($data), time(), !empty($tags) ? '##'.implode('##', $tags) : '', $key));
+                $stmt->execute(array($freshUntil, serialize($data), time(), $tags, $key));
                 $this->db->commit();
                 return true;
             } else {
@@ -280,32 +287,30 @@ class MySQL implements ConnectionInterface
         if ($key === true) {
             $key = 'temp_'.md5(microtime(true).rand(10000,99999));
             $force = true;
-            $freshFor = true;
+            $freshFor = 0;
             $temp = true;
         } else {
             $temp = false;
         }
         
-        if ($freshFor === true) {
-            $freshUntil = 0;
-            $persistent = 1;
-        } else {
-            $freshUntil = time() + $freshFor;
-            $persistent = 0;
-        }
+        $freshUntil = time() + $freshFor;
         
         $tags = array_values((array) $tags);
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+        } else {
+            $tags = !empty($tags) ? '##'.implode('##', $tags) : '';
+        }
         
         try {
             $this->db->beginTransaction();
-            $stmt = $this->stmtQueueGet ?: $this->stmtQueueGet = $this->db->prepare('SELECT id, fresh_until, persistent, queue_fresh_until, queue_persistent FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
+            $stmt = $this->stmtQueueGet ?: $this->stmtQueueGet = $this->db->prepare('SELECT id, fresh_until, queue_fresh_until FROM '.$this->tableName.' WHERE id = ? LIMIT 1 FOR UPDATE');
             $stmt->execute(array($key));
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (empty($result)) {
                 $stmt = $this->stmtQueueInsert ?: $this->stmtQueueInsert = $this->db->prepare('INSERT INTO '.$this->tableName.' SET
                     id = ?,
                     queue_fresh_until = ?,
-                    queue_persistent = ?,
                     queued = 1,
                     queued_worker = null,
                     task = ?,
@@ -314,15 +319,14 @@ class MySQL implements ConnectionInterface
                     queue_tags = ?,
                     is_temp = ?
                     ');
-                $stmt->execute(array($key, $freshUntil, $persistent, $task, serialize($params), $priority, !empty($tags) ? '##'.implode('##', $tags) : '', $temp ? 1 : 0));
+                $stmt->execute(array($key, $freshUntil, $task, serialize($params), $priority, $tags, $temp ? 1 : 0));
                 $this->db->commit();
                 return true;
             }
             
-            if ($force || ($result['fresh_until'] < time() && $result['queue_fresh_until'] < time() && empty($result['persistent']) && empty($result['queue_persistent']))) {
+            if ($force || ($result['fresh_until'] < time() && $result['queue_fresh_until'] < time())) {
                 $stmt = $this->stmtQueueUpdate ?: $this->stmtQueueUpdate = $this->db->prepare('UPDATE '.$this->tableName.' SET
                     queue_fresh_until = ?,
-                    queue_persistent = ?,
                     queued = 1,
                     queued_worker = null,
                     task = ?,
@@ -332,7 +336,7 @@ class MySQL implements ConnectionInterface
                     is_temp = ?
                     WHERE id = ?
                     ');
-                $stmt->execute(array($key, $freshUntil, $persistent, $task, serialize($params), $priority, !empty($tags) ? '##'.implode('##', $tags) : '', $temp ? 1 : 0, $key));
+                $stmt->execute(array($key, $freshUntil, $task, serialize($params), $priority, $tags, $temp ? 1 : 0, $key));
                 $this->db->commit();
                 return true;
             } else {
@@ -353,34 +357,16 @@ class MySQL implements ConnectionInterface
         return $stmt->fetchColumn();
     }
     
-    public function countAll($fresh = null, $persistent = null)
+    public function countAll($fresh = null)
     {
         $query = 'SELECT COUNT(*) as num FROM '.$this->tableName.'';
         
         
-        if ($fresh === null) {
-            if ($persistent !== null) {
-                $query .= ' WHERE (persistent = '.((int) $persistent).')';
-            }
-        } else {
-            if ($persistent === false) {
-                if ($fresh) {
-                    $query .= ' WHERE (fresh_until > NOW() AND persistent = 0)';
-                } else {
-                    $query .= ' WHERE (fresh_until <= NOW() AND persistent = 0)';
-                }
-            } elseif($persistent === true) {
-                if ($fresh) {
-                    $query .= ' WHERE (persistent = 1)';
-                } else {
-                    return 0;
-                }
+        if ($fresh !== null) {
+            if ($fresh) {
+                $query .= ' WHERE fresh_until > '.time();
             } else {
-                if ($fresh) {
-                    $query .= ' WHERE (fresh_until > NOW() OR persistent = 1)';
-                } else {
-                    $query .= ' WHERE (fresh_until <= NOW() AND persistent = 0)';
-                }
+                $query .= ' WHERE fresh_until <= '.time();
             }
         }
         
@@ -392,40 +378,26 @@ class MySQL implements ConnectionInterface
         return $stmt->fetchColumn();
     }
     
-    public function countByTag($tag, $fresh = null, $persistent = null)
+    public function countByTag($tag, $fresh = null)
     {
         $tags = array_values((array) $tag);
         
         $query = 'SELECT COUNT(*) as num FROM '.$this->tableName.' WHERE';
         
-        $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
-        
-        if ($fresh === null) {
-            if ($persistent !== null) {
-                $query .= ' AND (persistent = '.((int) $persistent).')';
-            }
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
         } else {
-            if ($persistent === false) {
-                if ($fresh) {
-                    $query .= ' AND (fresh_until > NOW() AND persistent = 0)';
-                } else {
-                    $query .= ' AND (fresh_until <= NOW() AND persistent = 0)';
-                }
-            } elseif($persistent === true) {
-                if ($fresh) {
-                    $query .= ' AND (persistent = 1)';
-                } else {
-                    return 0;
-                }
-            } else {
-                if ($fresh) {
-                    $query .= ' AND (fresh_until > NOW() OR persistent = 1)';
-                } else {
-                    $query .= ' AND (fresh_until <= NOW() AND persistent = 0)';
-                }
-            }
+            $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
         }
         
+        if ($fresh !== null) {
+            if ($fresh) {
+                $query .= ' AND fresh_until > '.time();
+            } else {
+                $query .= ' AND fresh_until <= '.time();
+            }
+        }
         
         if (!$stmt = $this->db->query($query)) {
             return false;
@@ -434,131 +406,105 @@ class MySQL implements ConnectionInterface
         return $stmt->fetchColumn();
     }
     
-    public function remove($key, $force = false, $persistent = null)
+    public function remove($key, $force = false)
     {
         $query = 'DELETE FROM '.$this->tableName.' WHERE id = ? ';
         $values = array($key);
         if (!$force) {
-            $query .= ' AND fresh_until < ? and persistent != 1';
+            $query .= ' AND fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'AND persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
     }
     
-    public function removeByTag($tag, $force = false, $persistent = null)
+    public function removeByTag($tag, $force = false)
     {
         $tags = array_values((array) $tag);
         $query = 'DELETE FROM '.$this->tableName.' WHERE ';
         
-        $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%%', $tags).'%") ';
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+        } else {
+            $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
+        }
         
         $values = array();
         if (!$force) {
-            $query .= ' AND fresh_until < ? and persistent != 1';
+            $query .= ' AND fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'AND persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
     }
     
-    public function removeAll($force = false, $persistent = null)
+    public function removeAll($force = false)
     {
         $query = 'DELETE FROM '.$this->tableName.' ';
         $values = array();
         if (!$force) {
-            $query .= ' WHERE fresh_until < ? and persistent != 1';
+            $query .= ' WHERE fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'WHERE persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
     }
     
-    public function outdate($key, $force = false, $persistent = null)
+    public function outdate($key, $force = false)
     {
         $query = 'UPDATE '.$this->tableName.' SET
             fresh_until = ?,
             queue_fresh_until = 0,
-            persistent = 0,
-            queue_persistent = 0,
             queued = 0
             WHERE id = ? ';
         
         $values = array(time()-1, $key);
         if (!$force) {
-            $query .= ' AND fresh_until < ? and persistent != 1';
+            $query .= ' AND fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'AND persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
     }
     
-    public function outdateByTag($tag, $force = false, $persistent = null)
+    public function outdateByTag($tag, $force = false)
     {
         $tags = array_values((array) $tag);
         $query = 'UPDATE '.$this->tableName.' SET
             fresh_until = ?,
             queue_fresh_until = 0,
-            persistent = 0,
-            queue_persistent = 0,
             queued = 0
             WHERE ';
         
-        $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%%', $tags).'%") ';
+        if ($this->useFulltextTags) {
+            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+        } else {
+            $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
+        }
         
         $values = array(time()-1);
         if (!$force) {
-            $query .= ' AND fresh_until < ? and persistent != 1';
+            $query .= ' AND fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'AND persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
     }
     
-    public function outdateAll($force = false, $persistent = null)
+    public function outdateAll($force = falsel)
     {
         $query = 'UPDATE '.$this->tableName.' SET
             fresh_until = ?,
             queue_fresh_until = 0,
-            persistent = 0,
-            queue_persistent = 0,
             queued = 0
             ';
         
         $values = array(time()-1);
         if (!$force) {
-            $query .= ' WHERE fresh_until < ? and persistent != 1';
+            $query .= ' WHERE fresh_until < ?';
             $values[] = time();
-        } else {
-            if ($persistent !== null) {
-                $query .= 'WHERE persistent = ?';
-                $values[] = (int) $persistent;
-            }
         }
         $stmt = $this->db->prepare($query);
         return $stmt->execute($values);
@@ -568,7 +514,6 @@ class MySQL implements ConnectionInterface
     {
         $query = 'UPDATE '.$this->tableName.' SET
             queue_fresh_until = 0,
-            queue_persistent = 0,
             queued = 0
             WHERE queued = 1 ';
         
@@ -578,7 +523,7 @@ class MySQL implements ConnectionInterface
     
     public function cleanup($outdatedFor = 0)
     {
-        $query = 'DELETE FROM '.$this->tableName.' WHERE fresh_until < ? and persistent != 1';
+        $query = 'DELETE FROM '.$this->tableName.' WHERE fresh_until < ?';
         $stmt = $this->db->prepare($query);
         return $stmt->execute(array(time()-$outdatedFor));
     }

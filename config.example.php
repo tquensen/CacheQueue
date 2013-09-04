@@ -22,8 +22,7 @@ include 'taskconfig.php';
     
     //settings for mongodb
     /*
-     * your cache collection should have indixes 'queued' => 1, 'fresh_until' => 1, 'persistent' => 1, 'queue_fresh_until' => 1, 'queue_persistent' => 1, 'tags' => 1, 'queue_priority' => 1
-     * run \CacheQueue\Connection\Mongo->setup() to generate these indices or add them manually
+     * run \CacheQueue\Connection\Mongo->setup() to generate indices
      */  
     $mongoConnection = array(
         //'server' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://localhost:27017' (see http://de3.php.net/manual/en/mongo.construct.php)
@@ -50,7 +49,8 @@ include 'taskconfig.php';
         'table' => 'cache',
         'options' => array(
             //additional database/driver specific options
-        )
+        ),
+        'useFulltextTags' => false //uses innoDB FULLTEXT index, requires MySQL 5.6+ - recommended (This can not be changed afterthe table was generated!)
     );
     
     

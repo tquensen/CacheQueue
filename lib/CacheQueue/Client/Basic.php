@@ -50,7 +50,6 @@ class Basic implements ClientInterface
         $job = array(
             'key' => false,
             'fresh_until' => 0,
-            'persistent' => true,
             'tags' => array(),
             'task' => $task,
             'params' => $params,
@@ -114,8 +113,7 @@ class Basic implements ClientInterface
 
             $job = array(
                 'key' => $key,
-                'fresh_until' => $freshFor === true ? 0 : time()+$freshFor,
-                'persistent' => $freshFor === true,
+                'fresh_until' => time() + $freshFor,
                 'tags' => $tags,
                 'task' => $task,
                 'params' => $params,
@@ -150,34 +148,34 @@ class Basic implements ClientInterface
         return !isset($result['data']) ? false : $result['data'];
     }
 
-    public function outdate($key, $force = false, $persistent = null)
+    public function outdate($key, $force = false)
     {
-        return $this->connection->outdate($key, $force, $persistent);
+        return $this->connection->outdate($key, $force);
     }
     
-    public function outdateByTag($tag, $force = false, $persistent = null)
+    public function outdateByTag($tag, $force = false)
     {
-        return $this->connection->outdateByTag($tag, $force, $persistent);
+        return $this->connection->outdateByTag($tag, $force);
     }
 
-    public function outdateAll($force = false, $persistent = null)
+    public function outdateAll($force = false)
     {
-        return $this->connection->outdateAll($force, $persistent);
+        return $this->connection->outdateAll($force);
     }
 
-    public function remove($key, $force = false, $persistent = null)
+    public function remove($key, $force = false)
     {
-        return $this->connection->remove($key, $force, $persistent);
+        return $this->connection->remove($key, $force);
     }
     
-    public function removeByTag($tag, $force = false, $persistent = null)
+    public function removeByTag($tag, $force = false)
     {
-        return $this->connection->removeByTag($tag, $force, $persistent);
+        return $this->connection->removeByTag($tag, $force);
     }
 
-    public function removeAll($force = false, $persistent = null)
+    public function removeAll($force = false)
     {
-        return $this->connection->removeAll($force, $persistent);
+        return $this->connection->removeAll($force);
     }
     
     public function setConnection(ConnectionInterface $connection)

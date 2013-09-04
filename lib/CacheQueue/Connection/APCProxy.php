@@ -40,7 +40,7 @@ class APCProxy implements ConnectionInterface
     {
         
         if (!apc_exists($this->prefix.$key) || !$result = apc_fetch($this->prefix.$key)) {
-            if ($result === 0) { $skip = true; }
+            if (isset($result) && $result === 0) { $skip = true; }
             $result = $this->connection->get($key);
             if (empty($skip) && $result && $result['is_fresh']) {
                 if ((!$this->filterRegex || preg_match('/'.str_replace('/', '\/', $this->filterRegex).'/', $key)) && (!$this->filterTags || (!empty($result['tags']) && array_intersect($this->filterTags, $result['tags'])))) {
@@ -95,59 +95,59 @@ class APCProxy implements ConnectionInterface
         return $this->connection->getQueueCount();
     }
     
-    public function countAll($fresh = null, $persistent = null)
+    public function countAll($fresh = null)
     {
-        return $this->connection->countAll($fresh, $persistent);
+        return $this->connection->countAll($fresh);
     }
 
-    public function countByTag($tag, $fresh = null, $persistent = null)
+    public function countByTag($tag, $fresh = null)
     {
-        return $this->connection->countByTag($tag, $fresh, $persistent);
+        return $this->connection->countByTag($tag, $fresh);
     }
 
     
-    public function remove($key, $force = false, $persistent = null)
+    public function remove($key, $force = false)
     {
         if (apc_exists($this->prefix.$key)) apc_delete($this->prefix.$key);
-        return $this->connection->remove($key, $force, $persistent);
+        return $this->connection->remove($key, $force);
     }
     
-    public function removeByTag($tag, $force = false, $persistent = null)
+    public function removeByTag($tag, $force = false)
     {
-        if ($force) {
+        //if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
-        }
-        return $this->connection->removeByTag($tag, $force, $persistent);
+        //}
+        return $this->connection->removeByTag($tag, $force);
     }
     
-    public function removeAll($force = false, $persistent = null)
+    public function removeAll($force = false)
     {
-        if ($force) {
+        //if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
-        }
-        return $this->connection->removeAll($force, $persistent);
+        //}
+        return $this->connection->removeAll($force);
     }
     
-    public function outdate($key, $force = false, $persistent = null)
+    public function outdate($key, $force = false)
     {
         if (apc_exists($this->prefix.$key)) apc_delete($this->prefix.$key);
-        return $this->connection->outdate($key, $force, $persistent);
+        return $this->connection->outdate($key, $force);
     }
     
-    public function outdateByTag($tag, $force = false, $persistent = null)
+    public function outdateByTag($tag, $force = false)
     {
-        if ($force) {
+        //if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
-        }
-        return $this->connection->outdateByTag($tag, $force, $persistent);
+        //}
+        return $this->connection->outdateByTag($tag, $force);
     }
     
-    public function outdateAll($force = false, $persistent = null)
+    public function outdateAll($force = false)
     {
-        if ($force) {
+        //if ($force) {
             apc_delete(new \APCIterator('user', '/^'.$this->prefix.'/'));
-        }
-        return $this->connection->outdateAll($force, $persistent);
+        //}
+        return $this->connection->outdateAll($force);
     }
     
     public function clearQueue()

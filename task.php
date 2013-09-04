@@ -62,54 +62,30 @@ try {
             switch (strtolower(trim($option))) {
                 case 'fresh':
                     $fresh = true;
-                    $persistent = null;
                     break;
                 case 'outdated':
                     $fresh = false;
-                    $persistent = null;
-                    break;
-                case 'persistent':
-                    $fresh = null;
-                    $persistent = true;
-                    break;
-                case 'nonpersistent':
-                    $fresh = null;
-                    $persistent = false;
-                    break;
-                case 'fresh-nonpersistent':
-                    $fresh = true;
-                    $persistent = false;
                     break;
                 default:
-                    echo 'Unknown option "'.$option.'", valid options are "fresh", "outdated", "persistent", "nonpersistent" and "fresh-nonpersistent" '."\n";
+                    echo 'Unknown option "'.$option.'", valid options are "fresh" and "outdated" '."\n";
                     exit;
             }
         } else {
             switch (strtolower(trim($option))) {
                 case 'force':
                     $force = true;
-                    $persistent = null;
-                    break;
-                case 'persistent':
-                    $force = true;
-                    $persistent = true;
-                    break;
-                case 'nonpersistent':
-                    $force = true;
-                    $persistent = false;
+
                     break;
                 default:
-                    echo 'Unknown option "'.$option.'", valid options are "force", "persistent" and "nonpersistent" '."\n";
+                    echo 'Unknown option "'.$option.'", valid options are "force" '."\n";
                     exit;
             }
         }
     } else {
         if (strtolower($_SERVER['argv'][1]) == 'count') {
             $fresh = null;
-            $persistent = null;
         } else {
             $force = false;
-            $persistent = null;
         }
     }
 
@@ -121,10 +97,10 @@ try {
                  foreach ($results as $data) {
                     echo "\n".'Data for entry "'.$data['key'].'":'."\n";
                     echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
-                    echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
+                    echo "\t".'fresh until:    '.date('Y-m-d H:i:s', $data['fresh_until'])."\n";
                     echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
                     echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
-                    echo "\t".'queue fresh until: '.($data['queue_persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['queue_fresh_until']))."\n";
+                    echo "\t".'queue fresh until: '.date('Y-m-d H:i:s', $data['queue_fresh_until'])."\n";
                     echo "\t".'data:       '.print_r($data['data'], true)."\n";
                 }     
             } else {
@@ -134,48 +110,48 @@ try {
                 } else {
                     echo 'Data for entry "'.$key.'":'."\n";
                     echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
-                    echo "\t".'fresh until:    '.($data['persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['fresh_until']))."\n";
+                    echo "\t".'fresh until:    '.date('Y-m-d H:i:s', $data['fresh_until'])."\n";
                     echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
                     echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
-                    echo "\t".'queue fresh until: '.($data['queue_persistent'] ? 'persistent' : date('Y-m-d H:i:s', $data['queue_fresh_until']))."\n";
+                    echo "\t".'queue fresh until: '.date('Y-m-d H:i:s', $data['queue_fresh_until'])."\n";
                     echo "\t".'data:       '.print_r($data['data'], true)."\n";
                 }     
             }
             break;
         case 'count':
             if (trim(strtolower($key)) == 'all') {
-                $count = $connection->countAll($fresh, $persistent);
+                $count = $connection->countAll($fresh);
                 echo $count.($option ? ' '.$option : '').' entries found.'."\n"; 
             } else {
                 if (strtolower($key) != 'tag') {
                     $tag = $key;
                 }
-                $count = $connection->countByTag($tag, $fresh, $persistent);
+                $count = $connection->countByTag($tag, $fresh);
                 echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n"; 
             }
             break;
         case 'remove':      
             if (trim(strtolower($key)) == 'all') {
-                $status = $connection->removeAll($force, $persistent);
+                $status = $connection->removeAll($force);
                 echo 'Removing all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
             } elseif (trim(strtolower($key)) == 'tag') {
-                $status = $connection->removeByTag($tag, $force, $persistent);
+                $status = $connection->removeByTag($tag, $force);
                 echo 'Removing all matching entries with tag "'.$tag.'": '.($status ? 'OK' : 'ERROR')."\n";
             } else {
-                $status = $connection->remove($key, $force, $persistent);
+                $status = $connection->remove($key, $force);
                 echo 'Removing entry "'.$key.'": '.($status ? 'OK' : 'ERROR')."\n";
             }
             break;
         case 'outdate':
             if (trim(strtolower($key)) == 'all') {
-                $status = $connection->outdateAll($force, $persistent);
+                $status = $connection->outdateAll($force);
                 echo 'Outdating all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
             } elseif (trim(strtolower($key)) == 'tag') {
-                $status = $connection->outdateByTag($tag, $force, $persistent);
+                $status = $connection->outdateByTag($tag, $force);
                 echo 'Outdating all matching entries with tag "'.$tag.'": '.($status ? 'OK' : 'ERROR')."\n";
             } else {
-                $status = $connection->outdate($key, $force, $persistent);
-                echo 'Outdating entry "'.$_SERVER['argv'][1].'": '.($status ? 'OK' : 'ERROR')."\n";
+                $status = $connection->outdate($key, $force);
+                echo 'Outdating entry "'.$key.'": '.($status ? 'OK' : 'ERROR')."\n";
             }
             break;
         case 'cleanup':
@@ -220,28 +196,21 @@ Available Tasks:
     get KEY|TAG [tag]
         displays the stored data for the given cache entry or tag
 
-    remove KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
+    remove KEY|TAG [tag]|ALL [force]
         removes an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) from cache
-        options: if no option is given, removes only outdated, non persistent entries
-                 if "force", removes any entries regardless of freshness or persistent state
-                 if "persistent", removes only matching persistent entries
-                 if "nonpersistent", removes only non persistent entries
+        options: if no option is given, removes only outdated entries
+                 if "force", removes any entries regardless of freshness
                  
-    outdate KEY|TAG [tag]|ALL [force|persistent|nonpersistent]
+    outdate KEY|TAG [tag]|ALL [force]
         outdates an entry with the key KEY (or all entries with the TAG [tag] or all entries if KEY=ALL) (sets fresh_until to the past)
-        options: if no option is given, outdates only fresh, non persistent entries
-                 if "force", outdates any entries regardless of freshness or persistent state
-                 if "persistent", outdates only matching persistent entries
-                 if "nonpersistent", outdates only non persistent entries
+        options: if no option is given, outdates only fresh entries
+                 if "force", outdates any entries regardless of freshness
     
-    count ALL|TAG [tag] [fresh|outdated|persistent|nonpersistent|fresh-nonpersistent]
+    count ALL|TAG [tag] [fresh|outdated]
         gets the number of all matching entries (or all matching entries with the TAG [tag])
         options: if no option is given, all entries are counted
-                 if "fresh", only fresh (or persistent) entries are counted
-                 if "outdated", only outdated, non-persistent entries are counted
-                 if "persistent", only persistent entries are counted
-                 if "nonpersistent", only non-persistent entries are counted (either fresh or outdated)
-                 if "fresh-nonpersistent", only fresh, non-persistent entries are counted
+                 if "fresh", only fresh entries are counted
+                 if "outdated", only outdated entries are counted
     
     clearqueue   removes all entries from queue
     

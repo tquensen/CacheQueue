@@ -53,33 +53,33 @@ class Dummy implements ConnectionInterface
         return 0;
     }
     
-    public function countAll($fresh = null, $persistent = null)
+    public function countAll($fresh = null)
     {
         return 0;
     }
 
-    public function countByTag($tag, $fresh = null, $persistent = null)
+    public function countByTag($tag, $fresh = null)
     {
         return 0;
     }
 
     
-    public function remove($key, $force = false, $persistent = null)
+    public function remove($key, $force = false)
     {
         return false;
     }
     
-    public function removeAll($force = false, $persistent = null)
+    public function removeAll($force = false)
     {
         return false;
     }
     
-    public function outdate($key, $force = false, $persistent = null)
+    public function outdate($key, $force = false)
     {
         return false;
     }
     
-    public function outdateAll($force = false, $persistent = null)
+    public function outdateAll($force = false)
     {
         return false;
     }
@@ -89,7 +89,7 @@ class Dummy implements ConnectionInterface
         return false;
     }
 
-    public function outdateByTag($tag, $force = false, $persistent = null)
+    public function outdateByTag($tag, $force = false)
     {
         return false;
     }
@@ -104,7 +104,7 @@ class Dummy implements ConnectionInterface
         return false;
     }
 
-    public function removeByTag($tag, $force = false, $persistent = null)
+    public function removeByTag($tag, $force = false)
     {
         return false;
     }

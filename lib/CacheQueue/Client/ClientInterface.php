@@ -30,7 +30,7 @@ interface ClientInterface
      * 
      * @param string $key the key to save the data for
      * @param mixed $data the data to be saved
-     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param int $freshFor number of seconds that the data is fresh
      * @param bool $force true to force the save even if the data is still fresh,
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return bool if the save was sucessful 
@@ -43,7 +43,7 @@ interface ClientInterface
      * @param string $key the key to save the data for or true for a random key
      * @param string $task the task to run
      * @param mixed $params parameters for the task
-     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param int $freshFor number of seconds that the data is fresh
      * @param bool $force true to force the queue even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @param int $priority the execution priority of the queued job, 0=high prio/early execution, 100=low prio/late execution
@@ -83,7 +83,7 @@ interface ClientInterface
      * @param string $key the key to get
      * @param mixed $callback a valid php callable to get the data from if the cache was outdated
      * @param mixed $params parameters for the callback
-     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param int $freshFor number of seconds that the data is fresh
      * @param bool $force true to force the save even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @param int|bool $lockFor locktime in seconds, ater that another lock can be obtained, if false, locks are ignored
@@ -98,7 +98,7 @@ interface ClientInterface
      * @param string $key the key to save the data for
      * @param string $task the task to run if the cached data was outdated
      * @param mixed $params parameters for the task
-     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param int $freshFor number of seconds that the data is fresh
      * @param bool $force true to force the queue even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @return mixed the cached data or false if not found
@@ -111,7 +111,7 @@ interface ClientInterface
      * @param string $key the key to save the data for
      * @param string $task the task to run if the cached data was outdated
      * @param mixed $params parameters for the task
-     * @param int|bool $freshFor number of seconds that the data is fresh or true to store as persistent
+     * @param int $freshFor number of seconds that the data is fresh
      * @param bool $force true to force running the task even if the data is still fresh
      * @param array|string $tags one or multiple tags to assign to the cache entry
      * @param int|bool $lockFor locktime in seconds, ater that another lock can be obtained, if false, locks are ignored
@@ -124,59 +124,53 @@ interface ClientInterface
      * removes an entry from cache
      * 
      * @param string $key the key of the entry to remove from cache
-     * @param bool $force if false (default), the entry will only be removed if it is outdated and non persistent 
-     * @param type $persistent only used if force=true. if true, the entry will be removed only if it is persistent, if false only if it is non-persistent, if null (default) if will be removed regardless of the persistent state
+     * @param bool $force if false (default), the entry will only be removed if it is outdated 
      * @return bool if the request was successful 
      */
-    public function remove($key, $force = false, $persistent = null);
+    public function remove($key, $force = false);
     
     /**
      * removes all entries from cache
      * 
-     * @param bool $force if false (default), only fresh, non persistent entries will be removed 
-     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @param bool $force if false (default), only fresh entries will be removed 
      * @return bool if the request was successful 
      */
-    public function removeAll($force = false, $persistent = null);
+    public function removeAll($force = false);
     
     /**
      * removes all entries with the given tag(s) from cache
      * 
      * @param array|string $tag multiple tags used to find the entries to remove
-     * @param bool $force if false (default), only fresh, non persistent entries will be removed 
-     * @param type $persistent only used if force=true. if true, only persistent entries will be removed, if false only non-persistent entries will be removed, if null(default) both persistent and non persistent entries will be removed
+     * @param bool $force if false (default), only fresh entries will be removed 
      * @return bool if the request was successful 
      */
-    public function removeByTag($tag, $force = false, $persistent = null);
+    public function removeByTag($tag, $force = false);
     
     /**
      * outdates an entry in cache (sets fresh_until to the past)
      * 
      * @param string $key the key of the entry to outdate
-     * @param bool $force if false (default), the entry will only get outdated if it is fresh and non persistent 
-     * @param bool|null $persistent only used if force=true. if true, the entry gets outdated only if it is persistent, if false only if it is non-persistent, if null (default) if gets outdated regardless of the persistent state
+     * @param bool $force if false (default), the entry will only get outdated if it is fresh
      * @return bool if the request was successful 
      */
-    public function outdate($key, $force = false, $persistent = null);
+    public function outdate($key, $force = false);
     
     /**
      * outdates all entries in cache (sets fresh_until to the past)
      * 
-     * @param bool $force if false (default), only fresh, non persistent entries will be outdated 
-     * @param bool|null $persistent only used if force=true. if true, only persistent entries get outdated, if false only non-persistent entries get outdated, if null(default) both persistent and non persistent entries get outdated
+     * @param bool $force if false (default), only fresh entries will be outdated 
      * @return bool if the request was successful 
      */
-    public function outdateAll($force = false, $persistent = null);
+    public function outdateAll($force = false);
     
     /**
      * outdates all entries with the given tag(s) in cache (sets fresh_until to the past)
      * 
      * @param array|string $tag multiple tags used to find the entries to outdate
-     * @param bool $force if false (default), only fresh, non persistent entries will be outdated 
-     * @param bool|null $persistent only used if force=true. if true, only persistent entries get outdated, if false only non-persistent entries get outdated, if null(default) both persistent and non persistent entries get outdated
+     * @param bool $force if false (default), only fresh entries will be outdated 
      * @return bool if the request was successful 
      */
-    public function outdateByTag($tag, $force = false, $persistent = null);
+    public function outdateByTag($tag, $force = false);
     
     /**
      * sets the connection class
