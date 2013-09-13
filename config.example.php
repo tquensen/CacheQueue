@@ -3,9 +3,16 @@ $config = array();
 
 // --- GENERAL SETTINGS --- //
 
+    //configuration for the worker.php, worker_fg.php and worker_bg.php scripts
+    $config['general']['workerscript_noticeAfterMoreThanSeconds'] = 30; //log a "finished" message only after X seconds
+    $config['general']['workerscript_noticeAfterTasksCount'] = 100; //log a message after proceeding X tasks without pause
+    $config['general']['workerscript_noticeSlowTaskMoreThanSeconds'] = 5; //log a "status" message if a single task takes longer than X seconds
+    $config['general']['workerscript_bg_exitAfterTasksCount'] = 100; //exit bg script after 100 Tasks without break
+    $config['general']['workerscript_bg_exitAfterMoreThanSeconds'] = 60; //exit bg script after 60 seconds without a break
 
-// --- TASKS --- //    
-include 'taskconfig.php';
+// --- TASKS --- //  
+    
+    include 'taskconfig.php';
 
 // --- MAIN CLASSES --- //   
 
@@ -16,6 +23,14 @@ include 'taskconfig.php';
         'worker' => '\\CacheQueue\\Worker\\Basic',
         'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog' OR '\\CacheQueue\\Logger\\Sentry'
     );
+
+// --- CLIENT SETTINGS --- //      
+    
+    $config['client'] = array(); //BASIC client class doesn't need configuration
+    
+// --- WORKER SETTINGS --- //      
+    
+    $config['worker'] = array(); //BASIC worker class doesn't need configuration    
     
 // --- CONNECTION SETTINGS --- //  
   
@@ -60,7 +75,7 @@ include 'taskconfig.php';
      * for parameters, see see https://github.com/nrk/predis/wiki/Quick-tour
      */
     $redisConnection = array(
-        'predisFile' => 'Predis/Predis.php', //this file will be included to load the Predis classes. you can remove this if you use an autoloader
+        'predisFile' => 'Predis/Predis.php', //this file will be included to load the Predis classes
         'parameters' => array(
             'host' => '10.211.55.4', 
             'port' => 6379, 

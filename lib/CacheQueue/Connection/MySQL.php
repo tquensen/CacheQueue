@@ -145,8 +145,8 @@ class MySQL implements ConnectionInterface
         $query = 'SELECT id, fresh_until, queue_fresh_until, date_set, task, params, data, tags FROM '.$this->tableName.' WHERE';
         
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
-            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'" IN BOOLEAN MODE) ';
         } else {
             $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
         }
@@ -238,7 +238,7 @@ class MySQL implements ConnectionInterface
         
         $tags = array_values((array) $tags);
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
         } else {
             $tags = !empty($tags) ? '##'.implode('##', $tags) : '';
         }
@@ -297,7 +297,7 @@ class MySQL implements ConnectionInterface
         
         $tags = array_values((array) $tags);
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
         } else {
             $tags = !empty($tags) ? '##'.implode('##', $tags) : '';
         }
@@ -385,8 +385,8 @@ class MySQL implements ConnectionInterface
         $query = 'SELECT COUNT(*) as num FROM '.$this->tableName.' WHERE';
         
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
-            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'" IN BOOLEAN MODE) ';
         } else {
             $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
         }
@@ -424,8 +424,8 @@ class MySQL implements ConnectionInterface
         $query = 'DELETE FROM '.$this->tableName.' WHERE ';
         
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
-            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'" IN BOOLEAN MODE) ';
         } else {
             $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
         }
@@ -478,8 +478,8 @@ class MySQL implements ConnectionInterface
             WHERE ';
         
         if ($this->useFulltextTags) {
-            $tags = preg_replace('[^a-zA-Z0-9_]', '_', implode(' ', $tags));
-            $query .= ' MATCH (tags) AGAINST ("'.$tags.'") ';
+            $tags = preg_replace('/[^a-zA-Z0-9_]/', '_', implode(' ', $tags));
+            $query .= ' MATCH (tags) AGAINST ("'.$tags.'" IN BOOLEAN MODE) ';
         } else {
             $query .= ' (tags LIKE "%##'.implode('%" OR tags LIKE "%##', $tags).'%") ';
         }

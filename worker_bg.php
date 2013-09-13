@@ -6,13 +6,13 @@ if (empty($_SERVER['argc'])) {
 }
     
 //add CacheQueue parent folder to include path
-set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__.'/lib');
 
 //enable PHP 5.3+ garbage collection
 gc_enable();
 
 //define config file
-$configFile = dirname(__FILE__).'/config.php';
+$configFile = __DIR__.'/config.php';
 
 $config = array();
 require_once($configFile);
@@ -29,11 +29,11 @@ $worker = $factory->getWorker();
 
 
 //exit after proceeding X tasks
-$exitAfterTasksCount = 100; //exit after 100 Tasks without break
-$exitAfterMoreThanSeconds = 60; //exit after 60 seconds without a break
+$exitAfterTasksCount = $config['general']['workerscript_bg_exitAfterTasksCount']; //exit after X Tasks without break
+$exitAfterMoreThanSeconds = $config['general']['workerscript_bg_exitAfterMoreThanSeconds']; //exit after X seconds without a break
 
 //log a "status" message if a single task takes longer than X seconds
-$noticeSlowTaskMoreThanSeconds = 5;
+$noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTaskMoreThanSeconds'];
 
 $start = microtime(true);
 $processed = 0;

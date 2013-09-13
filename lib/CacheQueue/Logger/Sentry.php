@@ -83,7 +83,7 @@ class Sentry implements LoggerInterface
         $this->ravenClient = new \Raven_Client($this->sentryDSN, $this->options);
     }
     
-    private function doLog($message, $level, $e)
+    private function doLog($message, $level)
     {
         if (empty($this->ravenClient)) {
             $this->initClient();

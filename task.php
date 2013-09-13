@@ -6,10 +6,10 @@ if (empty($_SERVER['argc'])) {
 }
     
 //add CacheQueue parent folder to include path
-set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__.'/lib');
 
 //define config file
-$configFile = dirname(__FILE__).'/config.php';
+$configFile = __DIR__.'/config.php';
 
 $config = array();
 require_once($configFile);

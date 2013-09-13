@@ -183,8 +183,11 @@ class Mongo implements ConnectionInterface
                 return (bool) $this->collection->update(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array('$lt' => new \MongoDate())
+                        '$or' => array(
+                            array('fresh_until' => array('$lt' => new \MongoDate())),
+                            array('fresh_until' => null)
                         ),
+                    ),
                     array('$set' => array(
                         'fresh_until' => $freshUntil,
                         'data' => $data,
@@ -302,8 +305,9 @@ class Mongo implements ConnectionInterface
             return (bool) $this->collection->remove(
                     array(
                         '_id' => $key,
-                        'fresh_until' => array(
-                            '$not' => array('$gte' => new \MongoDate())
+                        '$or' => array(
+                            array('fresh_until' => array('$lt' => new \MongoDate())),
+                            array('fresh_until' => null)
                         )
                     ),
                     array('w' => $this->w)
@@ -324,7 +328,10 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->remove(
                     array(
-                        'fresh_until' => array('$not' => array('$gte' => new \MongoDate())),
+                        '$or' => array(
+                            array('fresh_until' => array('$lt' => new \MongoDate())),
+                            array('fresh_until' => null)
+                        ),
                         'tags' => array('$in' => $tags)  
                     ),
                     array('w' => $this->w, 'multiple' => true)
@@ -342,7 +349,10 @@ class Mongo implements ConnectionInterface
         if (!$force) {
             return (bool) $this->collection->remove(
                     array(
-                        'fresh_until' => array('$not' => array('$gte' => new \MongoDate()))
+                        '$or' => array(
+                            array('fresh_until' => array('$lt' => new \MongoDate())),
+                            array('fresh_until' => null)
+                        )
                     ),
                     array('w' => $this->w, 'multiple' => true)
                 );
@@ -461,7 +471,10 @@ class Mongo implements ConnectionInterface
     {
         return (bool) $this->collection->remove(
                 array(
-                    'fresh_until' => array('$not' => array('$gte' => new \MongoDate(time()-$outdatedFor))),
+                    '$or' => array(
+                        array('fresh_until' => array('$lt' => new \MongoDate(time()-$outdatedFor))),
+                        array('fresh_until' => null)
+                    ),
                     'queued' => false
                 ),
                 array('w' => $this->w, 'multiple' => true, 'timeout' => 0)

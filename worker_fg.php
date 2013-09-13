@@ -6,13 +6,13 @@ if (empty($_SERVER['argc'])) {
 }
     
 //add CacheQueue parent folder to include path
-set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__.'/lib');
 
 //enable PHP 5.3+ garbage collection
 gc_enable();
 
 //define config file
-$configFile = dirname(__FILE__).'/config.php';
+$configFile = __DIR__.'/config.php';
 
 $config = array();
 require_once($configFile);
@@ -29,7 +29,7 @@ $connection = $factory->getConnection();
 $workerFile = __DIR__.'/worker_bg.php';
 
 //log a "status" message only after X seconds
-$noticeAfterMoreThanSeconds = 30;
+$noticeAfterMoreThanSeconds = $config['general']['workerscript_noticeAfterMoreThanSeconds'];
 
 $start = microtime(true);
 $time = 0;

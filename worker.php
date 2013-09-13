@@ -6,13 +6,13 @@ if (empty($_SERVER['argc'])) {
 }
     
 //add CacheQueue parent folder to include path
-set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__).'/lib');
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__.'/lib');
 
 //enable PHP 5.3+ garbage collection
 gc_enable();
 
 //define config file
-$configFile = dirname(__FILE__).'/config.php';
+$configFile = __DIR__.'/config.php';
 
 $config = array();
 require_once($configFile);
@@ -28,10 +28,13 @@ $connection = $factory->getConnection();
 $worker = $factory->getWorker();
 
 //log a "finished" message only after X seconds
-$noticeAfterMoreThanSeconds = 30;
+$noticeAfterMoreThanSeconds = $config['general']['workerscript_noticeAfterMoreThanSeconds'];
 
 //log a message after proceeding X tasks without pause
-$noticeAfterTasksCount = 100; //notice after the 100th, 200th, 300th, ... Task without break
+$noticeAfterTasksCount = $config['general']['workerscript_noticeAfterTasksCount']; //notice after the 100th, 200th, 300th, ... Task without break
+
+//log a "status" message if a single task takes longer than X seconds
+$noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTaskMoreThanSeconds'];
 
 if (in_array('--debug', $argv)) {
     $debug = true;
@@ -52,7 +55,12 @@ do {
             try {
                 if ($job = $worker->getJob()) {
                     if ($debug) echo 'running job '.$job['key']. ' ('.$job['task'].')'."\n";
+                    $jobStart = microtime(true);
                     $worker->work($job); 
+                    $jobEnd = microtime(true);
+                    if ($jobEnd - $jobStart > $noticeSlowTaskMoreThanSeconds) {
+                        $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') took '.(number_format($jobEnd - $jobStart, 4,'.','')).'s.');
+                    }
                     if ($debug) echo 'done...'."\n";
                 } else {
                     //pause processing for 1 sec if no queued task was found
