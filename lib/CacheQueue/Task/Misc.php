@@ -34,7 +34,7 @@ class Misc
             $context = @stream_context_create($params['context']);
             $result = @file_get_contents($params['url'], null, $context);
         } else {
-            $result = @file_get_contents($params['url'], null, $context);
+            $result = @file_get_contents($params['url']);
         }
         
         if ($result === false) {
@@ -52,6 +52,24 @@ class Misc
                 }
                 return;
             }
+        } elseif (!empty($params['format']) && $params['format'] == 'xml') {
+            $preverrors = libxml_use_internal_errors(true);
+            $return = null;
+            try {
+                $xml = new \DOMDocument();
+                if (!@$xml->loadXML($result)) {
+                    if (empty($params['disableErrorLog']) && $logger = $worker->getLogger()) {
+                        $logger->logError('loadUrl: failed to convert data to XML for URL '.$params['url']);
+                    }
+                } else {
+                    $return = $xml;
+                }   
+            } catch (\Exception $e) {
+                libxml_use_internal_errors($preverrors);
+                throw $e;
+            }
+            libxml_use_internal_errors($preverrors);
+            return $return;
         }
         
         if ($logger = $worker->getLogger()) {
