@@ -99,7 +99,7 @@ $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTi
  *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
  *   'refreshToken' => 'the oAuth2 refresh token'
  *   'profileId' => 'the Google Analytics profile ID'
- *   'operator' => 'the filter operator (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
+ *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
  *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
  *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
  *   'bulkCacheTime' => do a bulk request, cache the result for this many seconds and filter the result locally (optional, default = 0)

@@ -40,8 +40,8 @@ class Analytics
             throw new \Exception('Config parameters clientKey and clientSecret are required!');
         }
         
-        if (!$metric || empty($params['pagePath']) || empty($params['profileId']) || empty($params['refreshToken'])) {
-            throw new \Exception('parameters metric, pagePath, profileId and refreshToken are required!');
+        if (!$metric || empty($params['profileId']) || empty($params['refreshToken'])) {
+            throw new \Exception('parameters metric, profileId and refreshToken are required!');
         }
         
 //        $url = str_replace(array('https://', 'http://'), '', $params['pagePath']);
@@ -52,10 +52,12 @@ class Analytics
             $config['applicationName'] = 'unknown';
         }
         
-        $path = $params['pagePath'];
-        $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].';' : '';
-        
         $op = !empty($params['operator']) ? $params['operator'] : '==';
+        $path = !empty($params['pagePath']) ? $params['pagePath'] : '/';
+        $pathStr = !empty($params['pagePath']) ? 'ga:pagePath'.$op.$params['pagePath'] : '';
+        $hostStr = !empty($params['hostname']) ? 'ga:hostname=='.$params['hostname'].($pathStr ? ';' : '') : '';
+        
+        
         
         $dateFrom = !empty($params['dateFrom']) ? $params['dateFrom'] : '2005-01-01';
         $dateTo =  !empty($params['dateTo']) ? $params['dateTo'] : date('Y-m-d');
@@ -201,12 +203,15 @@ class Analytics
             $tries = 3;
             while(true) {
                 try {    
-                    $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:'.$metric, array(
+                    $parameter = array(
                         'dimensions' => 'ga:pagePath',
                         'sort' => '-ga:'.$metric,
-                        'max-results' => 50,
-                        'filters' => $hostStr.'ga:pagePath'.$op.$path
-                    ));
+                        'max-results' => 1
+                    );
+                    if ($hostStr || $pathStr) {
+                        $parameter['filters'] = $hostStr.$pathStr;
+                    }
+                    $data = $service->data_ga->get('ga:'.$params['profileId'], $dateFrom, $dateTo, 'ga:'.$metric, $parameter);
                     break;
                 } catch (\Exception $e) {
                     if (!--$tries) {
