@@ -28,7 +28,8 @@ class Social
         //FQL workaround for bug https://developers.facebook.com/bugs/180781098727185?browse=search_50dda74e1870c8d60275326
         $rawData = @file_get_contents('https://api.facebook.com/method/fql.query?format=json&query=select%20total_count%20from%20link_stat%20where%20url%20=%20%22' . $params . '%22', 0, $context);
 
-        if (($facebookData = @json_decode($rawData)) && isset($facebookData[0]->total_count)) {
+        $facebookData = @json_decode($rawData);
+        if ($facebookData && isset($facebookData[0]) && isset($facebookData[0]->total_count)) {
             return (int) $facebookData[0]->total_count;
         }
         return null;

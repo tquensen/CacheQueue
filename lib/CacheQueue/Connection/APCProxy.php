@@ -44,7 +44,7 @@ class APCProxy implements ConnectionInterface
             $result = $this->connection->get($key);
             if (empty($skip) && $result && $result['is_fresh']) {
                 if ((!$this->filterRegex || preg_match('/'.str_replace('/', '\/', $this->filterRegex).'/', $key)) && (!$this->filterTags || (!empty($result['tags']) && array_intersect($this->filterTags, $result['tags'])))) {
-                    apc_store($this->prefix.$key, $result, $result['persistent'] ? 0 : $result['fresh_until'] - time() + 1);
+                    apc_store($this->prefix.$key, $result, $result['fresh_until'] - time() + 1);
                 } else {
                     apc_store($this->prefix.$key, 0);
                 }
