@@ -18,7 +18,7 @@ $config = array();
 
     //define the classes you want to use as connectin, client, server and logger
     $config['classes'] = array(
-        'connection' => '\\CacheQueue\\Connection\\APCProxy', //'\\CacheQueue\\Connection\\Mongo' or '\\CacheQueue\\Connection\\MySQL' or '\\CacheQueue\\Connection\\Redis' or '\\CacheQueue\\Connection\\Dummy'
+        'connection' => '\\CacheQueue\\Connection\\APCProxy', //'\\CacheQueue\\Connection\\Mongo' or '\\CacheQueue\\Connection\\MySQL' or '\\CacheQueue\\Connection\\Dummy' // '\\CacheQueue\\Connection\\Redis' is not ready
         'client' => '\\CacheQueue\\Client\\Basic',
         'worker' => '\\CacheQueue\\Worker\\Basic',
         'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog' OR '\\CacheQueue\\Logger\\Sentry'
@@ -70,7 +70,7 @@ $config = array();
     
     
     
-    //settings for redis / predis
+    //settings for redis / predis //ALPHA / NOT WORKING
     /*
      * for parameters, see see https://github.com/nrk/predis/wiki/Quick-tour
      */
@@ -112,8 +112,8 @@ $config = array();
     );
 
     //GraylogLogger
+    //requires gelp-php lib: in composer.json, require { "graylog2/gelf-php": "~1.0" }
     $graylogLogger = array(
-        'gelfFile' => 'GELF/gelf.php', //this file will be included to load the gelf classes. you can remove this if you use an autoloader
         'graylogHostname' => 'graylog2.example.com',
         'graylogPort' => 12201,
         'host' => 'CacheQueueServer',
@@ -122,8 +122,8 @@ $config = array();
     );
     
     //SentryLogger
+    //requires raven-php lib: in composer.json, require { "raven/raven": "0.8.*@dev" }
     $sentryLogger = array(
-        'ravenAutoloaderFile' => 'Raven/Autoloader.php', //this file will be included to load the raven classes. you can remove this if you use an autoloader
         'sentryDSN' => 'http://public:secret@example.com/1',
         'options' => array( //options to pass to the raven client
             'name' => 'CacheQueueServer',

@@ -1,7 +1,3 @@
 /config.php
-nbproject
-
-/cl.php
-/cl_1.php
-/log.txt
-/lib/CacheQueue/Task/t3n.php
+/nbproject
+/vendor

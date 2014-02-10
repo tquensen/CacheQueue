@@ -1,13 +1,26 @@
 {
-    "name": "tqn/cache-queue",
-    "description": "CacheQueue.",
+    "name": "tqn/cache-queue-full",
+    "description": "CacheQueue",
     "authors": [
         {
             "name": "Thomas Quensen",
             "email": "tquensen@gmail.com"
         }
     ],  
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/tquensen/CacheQueueCore"
+        },
+        {
+            "type": "vcs",
+            "url": "https://bitbucket.org/mailchimp/mailchimp-api-php"
+        }
+    ],    
     "require": {
-        
+        "tqn/cache-queue": "dev-master",
+        "raven/raven": "0.8.*@dev",
+        "google/apiclient": "1.0.*@dev",
+        "mailchimp/mailchimp": ">=2.0.0"
     }
 }

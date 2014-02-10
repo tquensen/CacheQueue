@@ -66,11 +66,29 @@ $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes'
  * 
  * options:
  *   'consumerKey' => 'the consumer key of your twitter application'
- *   'consukerSecret' => 'the consumer secret of your twitter application'
+ *   'consumerSecret' => 'the consumer secret of your twitter application'
  */
 $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTimeline', array(
     'consumerKey' => 'the consumer key of your twitter application',
-    'consukerSecret' => 'the consumer secret of your twitter application'
+    'consumerSecret' => 'the consumer secret of your twitter application'
+));
+
+/*
+ * get twitter search results
+ * you need a twitter app to use this.
+ * https://dev.twitter.com/
+ * 
+ * params: all available params at https://dev.twitter.com/docs/api/1.1/get/search/tweets
+ * an array with any valid parameter available at https://dev.twitter.com/docs/api/1.1/get/search/tweets
+ * only required parameter is the search query "q" (parameters MUST NOT be URL-Encoded)
+ * 
+ * options:
+ *   'consumerKey' => 'the consumer key of your twitter application'
+ *   'consumerSecret' => 'the consumer secret of your twitter application'
+ */
+$config['tasks']['twittersearch'] = array('\\CacheQueue\\Task\\Social', 'getTwitterSearchResults', array(
+    'consumerKey' => 'the consumer key of your twitter application',
+    'consumerSecret' => 'the consumer secret of your twitter application'
 ));
 
 /*
@@ -80,16 +98,16 @@ $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTi
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
- * this task requires the Google api client library in your include_path!
+ * this task requires the "google/apiclient": "1.0.*" in you composer.json
  * 
  * register your oAuth2 application here to get a consumerKey/Secret
  * https://code.google.com/apis/console/
  * 
  * You can retrieve a refresh token here:
- * https://code.google.com/oauthplayground/
+ * https://developers.google.com/oauthplayground/
  * first, click the configuration button, check "Use your own OAuth credentials"
  * and add your client ID/secret, then
- * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+ * select "Google Analytics API v3" on the left and choose "https://www.googleapis.com/auth/analytics.readonly", click "Authorize APIs", then "Exchange authorization code for tokens"
  * use the refresh token on the client side when queueing the analytics task
  * 
  * params:
@@ -97,15 +115,16 @@ $config['tasks']['timeline'] = array('\\CacheQueue\\Task\\Social', 'getTwitterTi
  *   'metric' => 'the metric to recieve (without the "ga:"-prefix, e.g. 'pageviews', 'visits', ...)',
  *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
  *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
+ *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'refreshToken' => 'the oAuth2 refresh token'
  *   'profileId' => 'the Google Analytics profile ID'
- *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see http://code.google.com/apis/analytics/docs/gdata/gdataReferenceDataFeed.html#filters)
  *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
  *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
  *   'bulkCacheTime' => do a bulk request, cache the result for this many seconds and filter the result locally (optional, default = 0)
  *                      using a bulk-cache will reduce the number of google API requests, but may result in slower execution and older data
+ *   'bulkCacheFilters' => a filter rule for the bulkcache (example: "ga:hostname==example.com;ga:pagePath=~^/blog/", optional), the bulkcache will contain all urls (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'bulkCacheSplitDays' => optional, default false; split the bulk requests in date-ranges of bulkCacheSplitDays each and merge them afterwards.
- *                           this is to prevent sampling of the google data recommended value depends on actual page soze and age.
+ *                           this is to prevent sampling of the google data. recommended value depends on actual page size and age.
  *                           keep in mind that large date-ranges result in many requests, so for a dateFrom 1 month ago, you should use a
  *                           bulkCacheSplitDays of 10 days or more, not recommended for ranges > 2 month
  * 
@@ -151,16 +170,16 @@ $config['tasks']['visits'] = array('\\CacheQueue\\Task\\Analytics', 'getVisits',
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
- * this task requires the Google api client library in your include_path!
+ * this task requires the "google/apiclient": "1.0.*" in you composer.json
  * 
  * register your oAuth2 application here to get a consumerKey/Secret
  * https://code.google.com/apis/console/
  * 
  * You can retrieve a refresh token here:
- * https://code.google.com/oauthplayground/
+ * https://developers.google.com/oauthplayground/
  * first, click the configuration button, check "Use your own OAuth credentials"
  * and add your client ID/secret, then
- * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+ * select "Google Analytics API v3" on the left and choose "https://www.googleapis.com/auth/analytics.readonly", click "Authorize APIs", then "Exchange authorization code for tokens"
  * use the refresh token on the client side when queueing the analytics task
  * 
  * params:
@@ -188,22 +207,23 @@ $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEvent
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
- * this task requires the Google api client library in your include_path!
+ * this task requires the "google/apiclient": "1.0.*" in you composer.json
  * 
  * register your oAuth2 application here to get a consumerKey/Secret
  * https://code.google.com/apis/console/
  * 
  * You can retrieve a refresh token here:
- * https://code.google.com/oauthplayground/
+ * https://developers.google.com/oauthplayground/
  * first, click the configuration button, check "Use your own OAuth credentials"
  * and add your client ID/secret, then
- * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+ * select "Google Analytics API v3" on the left and choose "https://www.googleapis.com/auth/analytics.readonly", click "Authorize APIs", then "Exchange authorization code for tokens"
  * use the refresh token on the client side when queueing the analytics task
  * 
  * params:
  * an array with
- *   'pathPrefix' => 'only consider urls beginning with this prefix. optional, default is "/"',
- *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)',
+ *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
+ *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
+ *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'count' => 'limit results to this number (overwrites count option)',
  *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
  *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
@@ -228,22 +248,23 @@ $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
- * this task requires the Google api client library in your include_path!
+ * this task requires the "google/apiclient": "1.0.*" in you composer.json
  * 
  * register your oAuth2 application here to get a consumerKey/Secret
  * https://code.google.com/apis/console/
  * 
  * You can retrieve a refresh token here:
- * https://code.google.com/oauthplayground/
+ * https://developers.google.com/oauthplayground/
  * first, click the configuration button, check "Use your own OAuth credentials"
  * and add your client ID/secret, then
- * select Analytics on the left, click "Authorize APIs", then "Exchange authorization code for tokens"
+ * select "Google Analytics API v3" on the left and choose "https://www.googleapis.com/auth/analytics.readonly", click "Authorize APIs", then "Exchange authorization code for tokens"
  * use the refresh token on the client side when queueing the analytics task
  * 
  * params:
  * an array with
- *   'pathPrefix' => 'only consider urls beginning with this prefix. optional, default is "/"',
- *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)',
+ *   'pagePath' => 'the (absolute) path to get pageviews for (e.g. /blog/my-post/) / can be a regular expression for some operators'
+ *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
+ *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'count' => 'limit results to this number (overwrites count option)',
  *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
  *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
@@ -292,7 +313,16 @@ $config['tasks']['piwik'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array
 /*
  * call the mailchimp api
  * 
- * @see http://apidocs.mailchimp.com/api/1.3/ or look at the PHPDOC in MCAPI.class.php
+ * @see http://apidocs.mailchimp.com/api/2.0/
+ * 
+ * this task requires the "mailchimp/mailchimp": ">=2.0.0" in you composer.json
+ * also, add the mailchimp repository to your composer.json:
+ * "repositories": [
+ *      {
+ *          "type": "vcs",
+ *          "url": "https://bitbucket.org/mailchimp/mailchimp-api-php"
+ *      }
+ *  ],
  * 
  * params:
  * an array with
@@ -302,20 +332,22 @@ $config['tasks']['piwik'] = array('\\CacheQueue\\Task\\Piwik', 'doAction', array
  *                  see http://apidocs.mailchimp.com/api/1.3/#method-&-error-code-docs
  *
  *  'apiKey' => 'your mailchimp api key' (optional, overwrites the apiKey option)
- *  'secure' => bool, default = false / Whether or not this should use a secure connection (optional, overwrites the secure option)
- *  'timeout' => 'server call timeout in seconds, default=300'  (optional, overwrites the timeout option)
+ *  'options' => array of options for the mailchimp client (optional, overwrites/merges the options option)
  * 
  * options:
  *   'apiKey' => 'your mailchimp api key'
- *   'secure' => bool, default = false / Whether or not this should use a secure connection (optional)
- *   'timeout' => 'server call timeout in seconds, default=300' (optional)
- *   'MCAPIFile' => 'location of the MCAPI.class.php file to include (optional if an autoloader is used)
+ *   'options' => array of options for the mailchimp client
  */
 $config['tasks']['mailchimp'] = array('\\CacheQueue\\Task\\MailChimp', 'execute', array(
     'apiKey' => 'your mailchimp api key',
-    'secure' => false,
     'timeout' => 300,
-    'MCAPIFile' => 'MailChimp/MCAPI.class.php'
+    'options' => array(
+        //'timeout' => 300, //server call timeout in seconds, default=600
+        //'debug' => false,
+        //'ssl_verifypeer' => null,
+        //'ssl_verifyhost' => null,
+        //'ssl_cainfo' => null
+    )
 ));
 
 /*
