@@ -1,0 +1,191 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+    ],
+    "hash": "d1f09267e7914c42980c62509122cfc1",
+    "packages": [
+        {
+            "name": "google/apiclient",
+            "version": "1.0.3-beta",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/google/google-api-php-client.git",
+                "reference": "2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/google/google-api-php-client/zipball/2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9",
+                "reference": "2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.1"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "include-path": [
+                "src/"
+            ],
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Client library for Google APIs",
+            "homepage": "http://developers.google.com/api-client-library/php",
+            "keywords": [
+                "google"
+            ],
+            "time": "2014-01-30 21:36:57"
+        },
+        {
+            "name": "mailchimp/mailchimp",
+            "version": "2.0.4",
+            "source": {
+                "type": "hg",
+                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php",
+                "reference": "190cf58000ee4ed47900c78d5d4ef58c4cae0b49"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php/get/190cf58000ee4ed47900c78d5d4ef58c4cae0b49.zip",
+                "reference": "190cf58000ee4ed47900c78d5d4ef58c4cae0b49",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Mailchimp": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "MailChimp Devs",
+                    "email": "api@mailchimp.com",
+                    "homepage": "http://mailchimp.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "API client library for the MailChimp bulk email as a service platform",
+            "homepage": "https://bitbucket.org/mailchimp/mailchimp-api-php",
+            "keywords": [
+                "api",
+                "email"
+            ],
+            "time": "2013-10-17 12:16:33"
+        },
+        {
+            "name": "raven/raven",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/getsentry/raven-php.git",
+                "reference": "9340c0eadb081dd779d7ce45f7fcaca9981950e3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/getsentry/raven-php/zipball/9340c0eadb081dd779d7ce45f7fcaca9981950e3",
+                "reference": "9340c0eadb081dd779d7ce45f7fcaca9981950e3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "3.7.*"
+            },
+            "bin": [
+                "bin/raven"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.8.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Raven_": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD"
+            ],
+            "authors": [
+                {
+                    "name": "David Cramer",
+                    "email": "dcramer@gmail.com"
+                }
+            ],
+            "description": "A PHP client for Sentry (http://getsentry.com)",
+            "homepage": "http://getsentry.com",
+            "keywords": [
+                "log",
+                "logging"
+            ],
+            "time": "2014-01-19 19:21:06"
+        },
+        {
+            "name": "tqn/cache-queue",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tquensen/CacheQueueCore.git",
+                "reference": "f4cf6f88e66735ad1b77efa40fc4f32df59cef37"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/f4cf6f88e66735ad1b77efa40fc4f32df59cef37",
+                "reference": "f4cf6f88e66735ad1b77efa40fc4f32df59cef37",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CacheQueue\\": "CacheQueue"
+                }
+            },
+            "authors": [
+                {
+                    "name": "Thomas Quensen",
+                    "email": "tquensen@gmail.com"
+                }
+            ],
+            "description": "CacheQueue Lib",
+            "support": {
+                "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
+                "issues": "https://github.com/tquensen/CacheQueueCore/issues"
+            },
+            "time": "2014-02-10 10:53:31"
+        }
+    ],
+    "packages-dev": [
+
+    ],
+    "aliases": [
+
+    ],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "tqn/cache-queue": 20,
+        "raven/raven": 20,
+        "google/apiclient": 20
+    },
+    "platform": [
+
+    ],
+    "platform-dev": [
+
+    ]
+}
