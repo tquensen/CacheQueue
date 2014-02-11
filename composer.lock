@@ -142,12 +142,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "f4cf6f88e66735ad1b77efa40fc4f32df59cef37"
+                "reference": "4c61891ce4181a45017647aa81781502a98f04f9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/f4cf6f88e66735ad1b77efa40fc4f32df59cef37",
-                "reference": "f4cf6f88e66735ad1b77efa40fc4f32df59cef37",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/4c61891ce4181a45017647aa81781502a98f04f9",
+                "reference": "4c61891ce4181a45017647aa81781502a98f04f9",
                 "shasum": ""
             },
             "type": "library",
@@ -167,7 +167,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2014-02-10 10:53:31"
+            "time": "2014-02-11 16:06:08"
         }
     ],
     "packages-dev": [

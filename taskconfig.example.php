@@ -132,11 +132,13 @@ $config['tasks']['twittersearch'] = array('\\CacheQueue\\Task\\Social', 'getTwit
  *   'applicationName' => 'name of your application'
  *   'clientKey' => 'the client key'
  *   'clientSecret' => 'the client secret'
+ *   'googleConfigIniLocation' => 'location of the google client config.ini file' (optional)
  */
 $config['tasks']['gametric'] = array('\\CacheQueue\\Task\\Analytics', 'getMetric', array(
     'applicationName' => 'yourApp',
     'clientKey' => 'yourkey.apps.googleusercontent.com',
-    'clientSecret' => 'YourClientSecret'
+    'clientSecret' => 'YourClientSecret',
+    'googleConfigIniLocation' => null
 ));
 
 /*
@@ -148,7 +150,8 @@ $config['tasks']['gametric'] = array('\\CacheQueue\\Task\\Analytics', 'getMetric
 $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPageviews', array(
     'applicationName' => 'yourApp',
     'clientKey' => 'yourkey.apps.googleusercontent.com',
-    'clientSecret' => 'YourClientSecret'
+    'clientSecret' => 'YourClientSecret',
+    'googleConfigIniLocation' => null
 ));
 
 /*
@@ -160,7 +163,8 @@ $config['tasks']['pageviews'] = array('\\CacheQueue\\Task\\Analytics', 'getPagev
 $config['tasks']['visits'] = array('\\CacheQueue\\Task\\Analytics', 'getVisits', array(
     'applicationName' => 'yourApp',
     'clientKey' => 'yourkey.apps.googleusercontent.com',
-    'clientSecret' => 'YourClientSecret'
+    'clientSecret' => 'YourClientSecret',
+    'googleConfigIniLocation' => null
 ));
 
 /*
@@ -194,10 +198,12 @@ $config['tasks']['visits'] = array('\\CacheQueue\\Task\\Analytics', 'getVisits',
  * options:
  *   'clientKey' => 'the client key'
  *   'clientSecret' => 'the client secret'
+ *   'googleConfigIniLocation' => 'location of the google client config.ini file' (optional)
  */
 $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEventData', array(
     'clientKey' => 'yourkey.apps.googleusercontent.com',
-    'clientSecret' => 'YourClientSecret'
+    'clientSecret' => 'YourClientSecret',
+    'googleConfigIniLocation' => null
 ));
 
 /*
@@ -234,11 +240,13 @@ $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEvent
  *   'clientKey' => 'the client key'
  *   'clientSecret' => 'the client secret',
  *   'count' => 'limit results to this number (can be overwritten by the count parameter)'
+ *   'googleConfigIniLocation' => 'location of the google client config.ini file' (optional)
  */
 $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls', array(
     'clientKey' => 'yourkey.apps.googleusercontent.com',
     'clientSecret' => 'YourClientSecret',
-    'count' => 20
+    'count' => 20,
+    'googleConfigIniLocation' => null
 ));
 
 /*
@@ -275,11 +283,13 @@ $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls
  *   'clientKey' => 'the client key'
  *   'clientSecret' => 'the client secret',
  *   'count' => 'limit results to this number (can be overwritten by the count parameter)'
+ *   'googleConfigIniLocation' => 'location of the google client config.ini file' (optional)
  */
 $config['tasks']['topkeywords'] = array('\\CacheQueue\\Task\\Analytics', 'getTopKeywords', array(
     'clientKey' => 'yourkey.apps.googleusercontent.com',
     'clientSecret' => 'YourClientSecret',
-    'count' => 100
+    'count' => 100,
+    'googleConfigIniLocation' => null
 ));
 
 /*

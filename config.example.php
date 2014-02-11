@@ -112,7 +112,7 @@ $config = array();
     );
 
     //GraylogLogger
-    //requires gelp-php lib: in composer.json, require { "graylog2/gelf-php": "~1.0" }
+    //requires gelf-php lib: in composer.json, require { "graylog2/gelf-php": "~1.0" }
     $graylogLogger = array(
         'graylogHostname' => 'graylog2.example.com',
         'graylogPort' => 12201,
