@@ -7,16 +7,16 @@
     "packages": [
         {
             "name": "google/apiclient",
-            "version": "1.0.3-beta",
+            "version": "1.0.4-beta",
             "source": {
                 "type": "git",
                 "url": "https://github.com/google/google-api-php-client.git",
-                "reference": "2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9"
+                "reference": "eb5934d58761f1a8575e6df6de02fdce89dd89d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/google/google-api-php-client/zipball/2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9",
-                "reference": "2b3b475e3ee52e92fc7b649138ef4f9da3d4f9b9",
+                "url": "https://api.github.com/repos/google/google-api-php-client/zipball/eb5934d58761f1a8575e6df6de02fdce89dd89d2",
+                "reference": "eb5934d58761f1a8575e6df6de02fdce89dd89d2",
                 "shasum": ""
             },
             "require": {
@@ -40,28 +40,25 @@
             "keywords": [
                 "google"
             ],
-            "time": "2014-01-30 21:36:57"
+            "time": "2014-03-07 17:54:19"
         },
         {
             "name": "graylog2/gelf-php",
-            "version": "v1.0.1",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bzikarsky/gelf-php.git",
-                "reference": "bd26eecb057608377d4b7c7bd792606d8a6c448e"
+                "reference": "3b60b669ad21830d957dfff404fbbf767e02dc63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/bd26eecb057608377d4b7c7bd792606d8a6c448e",
-                "reference": "bd26eecb057608377d4b7c7bd792606d8a6c448e",
+                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/3b60b669ad21830d957dfff404fbbf767e02dc63",
+                "reference": "3b60b669ad21830d957dfff404fbbf767e02dc63",
                 "shasum": ""
             },
             "require": {
                 "php": "~5.3",
                 "psr/log": "~1.0"
-            },
-            "require-dev": {
-                "satooshi/php-coveralls": "~0.6"
             },
             "type": "library",
             "autoload": {
@@ -80,7 +77,7 @@
                 }
             ],
             "description": "A php implementation to send log-messages to a GELF compatible backend like Graylog2.",
-            "time": "2014-01-23 14:21:27"
+            "time": "2014-03-01 08:19:26"
         },
         {
             "name": "mailchimp/mailchimp",
@@ -220,12 +217,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "4c61891ce4181a45017647aa81781502a98f04f9"
+                "reference": "6a9e902bcd8be47145f6b8538e9f13e45052964c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/4c61891ce4181a45017647aa81781502a98f04f9",
-                "reference": "4c61891ce4181a45017647aa81781502a98f04f9",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/6a9e902bcd8be47145f6b8538e9f13e45052964c",
+                "reference": "6a9e902bcd8be47145f6b8538e9f13e45052964c",
                 "shasum": ""
             },
             "type": "library",
@@ -245,7 +242,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2014-02-11 16:06:08"
+            "time": "2014-03-14 08:07:25"
         }
     ],
     "packages-dev": [
