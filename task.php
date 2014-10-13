@@ -115,6 +115,24 @@ try {
                 }     
             }
             break;
+        case 'getdata':
+            if (trim(strtolower($key)) == 'tag') {
+                $results = $connection->getByTag($tag, $force ? false : true);
+                 echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
+                 foreach ($results as $data) {
+                    echo "\n".'Data for entry "'.$data['key'].'":'."\n";
+                    echo print_r($data['data'], true)."\n";
+                }
+            } else {
+                $data = $connection->get($key);
+                if (!$data) {
+                    echo 'Cache entry "'.$key.'" not found'."\n";
+                } else {
+                    echo 'Data for entry "'.$key.'":'."\n";
+                    echo print_r($data['data'], true)."\n";
+                }
+            }
+            break;
         case 'count':
             if (trim(strtolower($key)) == 'all') {
                 $count = $connection->countAll($fresh);
@@ -191,6 +209,9 @@ function print_help()
     echo <<<EOF
 Available Tasks:
     get KEY|TAG [tag]
+        displays the cache information and data for the given cache entry or tag
+
+    getdata KEY|TAG [tag]
         displays the stored data for the given cache entry or tag
 
     remove KEY|TAG [tag]|ALL [force]

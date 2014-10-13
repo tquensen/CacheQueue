@@ -7,6 +7,7 @@ $config = array();
     $config['general']['workerscript_noticeAfterMoreThanSeconds'] = 30; //log a "finished" message only after X seconds
     $config['general']['workerscript_noticeAfterTasksCount'] = 100; //log a message after proceeding X tasks without pause
     $config['general']['workerscript_noticeSlowTaskMoreThanSeconds'] = 5; //log a "status" message if a single task takes longer than X seconds
+    $config['general']['workerscript_noticeLargeDataMoreThanBytes'] = 102400; //log a "status" message if a single task data is larger than X bytes (1024=1KB, 1048576=1MB)
     $config['general']['workerscript_bg_exitAfterTasksCount'] = 100; //exit bg script after 100 Tasks without break
     $config['general']['workerscript_bg_exitAfterMoreThanSeconds'] = 60; //exit bg script after 60 seconds without a break
 

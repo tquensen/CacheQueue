@@ -32,6 +32,9 @@ $noticeAfterTasksCount = $config['general']['workerscript_noticeAfterTasksCount'
 //log a "status" message if a single task takes longer than X seconds
 $noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTaskMoreThanSeconds'];
 
+//log a "status" message if a single task data is larger than X bytes
+$noticeLargeDataMoreThanBytes = $config['general']['workerscript_noticeLargeDataMoreThanBytes'];
+
 if (in_array('--debug', $argv)) {
     $debug = true;
 } else {
@@ -52,8 +55,17 @@ do {
                 if ($job = $worker->getJob()) {
                     if ($debug) echo 'running job '.$job['key']. ' ('.$job['task'].')'."\n";
                     $jobStart = microtime(true);
-                    $worker->work($job); 
+                    $result = $worker->work($job);
                     $jobEnd = microtime(true);
+                    if ($noticeLargeDataMoreThanBytes) {
+                        $size = strlen(is_array($result) ? serialize($result) : $result);
+                        if ($size > $noticeLargeDataMoreThanBytes) {
+                            $base = log($size) / log(1024);
+                            $suffixes = array('', 'k', 'M', 'G', 'T');
+                            $hrSize = round(pow(1024, $base - floor($base)), 2) . $suffixes[floor($base)];
+                            $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') data size is '.$hrSize.'.');
+                        }
+                    }
                     if ($jobEnd - $jobStart > $noticeSlowTaskMoreThanSeconds) {
                         $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') took '.(number_format($jobEnd - $jobStart, 4,'.','')).'s.');
                     }
