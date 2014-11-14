@@ -120,6 +120,10 @@ $config['tasks']['twittersearch'] = array('\\CacheQueue\\Task\\Social', 'getTwit
  *   'profileId' => 'the Google Analytics profile ID'
  *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
  *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
+ *   'splitDays' => optional, default false; split the request in date-ranges of splitDays each and merge them afterwards.
+ *                  this is to prevent sampling of the google data. recommended value depends on actual page size and age.
+ *                  keep in mind that large date-ranges result in many requests, so for a dateFrom 1 month ago, you should use a
+ *                  splitDays of 10 days or more, not recommended for ranges > 2 month
  *   'bulkCacheTime' => do a bulk request, cache the result for this many seconds and filter the result locally (optional, default = 0)
  *                      using a bulk-cache will reduce the number of google API requests, but may result in slower execution and older data
  *   'bulkCacheFilters' => a filter rule for the bulkcache (example: "ga:hostname==example.com;ga:pagePath=~^/blog/", optional), the bulkcache will contain all urls (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
@@ -289,6 +293,61 @@ $config['tasks']['topkeywords'] = array('\\CacheQueue\\Task\\Analytics', 'getTop
     'clientKey' => 'yourkey.apps.googleusercontent.com',
     'clientSecret' => 'YourClientSecret',
     'count' => 100,
+    'googleConfigIniLocation' => null
+));
+
+/*
+ * oAuth2 / API v3 version!
+ *
+ * perform a custom analytics api request
+ * you need a registered oAuth2 application on the server/task side,
+ * and an Analytics Account and a refresh token on the client side
+ *
+ * this task requires the "google/apiclient": "1.0.*" in you composer.json
+ *
+ * register your oAuth2 application here to get a consumerKey/Secret
+ * https://code.google.com/apis/console/
+ *
+ * You can retrieve a refresh token here:
+ * https://developers.google.com/oauthplayground/
+ * first, click the configuration button, check "Use your own OAuth credentials"
+ * and add your client ID/secret, then
+ * select "Google Analytics API v3" on the left and choose "https://www.googleapis.com/auth/analytics.readonly", click "Authorize APIs", then "Exchange authorization code for tokens"
+ * use the refresh token on the client side when queueing the analytics task
+ *
+ * params:
+ * an array with
+ *   'profileId' => 'the Google Analytics profile ID',
+ *   'refreshToken' => 'the oAuth2 refresh token'
+ *   'metrics' => 'list of metrics e.g. 'ga:sessions,ga:pageviews' ',
+ *   'dateFrom' => 'the start date (optional), format YYYY-MM-DD, default is 2005-01-01
+ *   'dateTo' => 'the end date (optional), format YYYY-MM-DD, default is current day
+ *   'dimensions' => (optional) 'A comma-separated list of Analytics dimensions. E.g., 'ga:browser,ga:city''
+ *   'filters' => (optional) 'A comma-separated list of dimension or metric filters to be applied to Analytics data.'
+ *   'sort' => (optional) 'A comma-separated list of dimensions or metrics that determine the sort order for Analytics',
+ *   'maxResults' => (optional) 'The maximum number of entries to include in this feed.',
+ *   'startIndex' => (optional) 'An index of the first entity to retrieve. Use this parameter as a pagination mechanism along with the max-results parameter.'
+ *   'segment' => (optional) 'An Analytics segment to be applied to data.',
+ *   'samplingLevel' => (optional) 'The desired sampling level.'
+ *
+ * options:
+ *   'applicationName' => 'name of your application'
+ *   'clientKey' => 'the client key'
+ *   'clientSecret' => 'the client secret'
+ *   'googleConfigIniLocation' => 'location of the google client config.ini file' (optional)
+ *
+ * returns:
+ *   array(
+ *     'totalResults' => number of total results,
+ *     'totalsForAllResults' => array of aggregated totals for each metric
+ *     'containsSampledData' => boolean indication if results are based on sampled data
+ *     'results' => array of individual result rows, each containing an array of metric/dimension => value pairs
+ *   )
+ */
+$config['tasks']['analytics'] = array('\\CacheQueue\\Task\\Analytics', 'customRequest', array(
+    'applicationName' => 'yourApp',
+    'clientKey' => 'yourkey.apps.googleusercontent.com',
+    'clientSecret' => 'YourClientSecret',
     'googleConfigIniLocation' => null
 ));
 

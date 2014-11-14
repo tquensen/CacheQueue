@@ -53,26 +53,30 @@
         },
         {
             "name": "graylog2/gelf-php",
-            "version": "1.0.4",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bzikarsky/gelf-php.git",
-                "reference": "e27565289f773217758c916309a7059c3ac8d555"
+                "reference": "b6f306e1b36b718aaf03b59563f4d6389e92cead"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/e27565289f773217758c916309a7059c3ac8d555",
-                "reference": "e27565289f773217758c916309a7059c3ac8d555",
+                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/b6f306e1b36b718aaf03b59563f4d6389e92cead",
+                "reference": "b6f306e1b36b718aaf03b59563f4d6389e92cead",
                 "shasum": ""
             },
             "require": {
                 "php": "~5.3",
                 "psr/log": "~1.0"
             },
+            "require-dev": {
+                "phpunit/phpunit": "~4.3",
+                "squizlabs/php_codesniffer": "~1.5"
+            },
             "type": "library",
             "autoload": {
-                "psr-0": {
-                    "Gelf": "src/"
+                "psr-4": {
+                    "Gelf\\": "src/Gelf"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -86,20 +90,20 @@
                 }
             ],
             "description": "A php implementation to send log-messages to a GELF compatible backend like Graylog2.",
-            "time": "2014-06-02 16:25:56"
+            "time": "2014-10-23 05:32:34"
         },
         {
             "name": "mailchimp/mailchimp",
-            "version": "2.0.5",
+            "version": "2.0.6",
             "source": {
                 "type": "hg",
                 "url": "https://bitbucket.org/mailchimp/mailchimp-api-php",
-                "reference": "a884ee03dd282deddfc471257b01fd09e5cd06dc"
+                "reference": "7ac99b5ac746d5875c5c350ad7e3b83674c83ec1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php/get/a884ee03dd282deddfc471257b01fd09e5cd06dc.zip",
-                "reference": "a884ee03dd282deddfc471257b01fd09e5cd06dc",
+                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php/get/7ac99b5ac746d5875c5c350ad7e3b83674c83ec1.zip",
+                "reference": "7ac99b5ac746d5875c5c350ad7e3b83674c83ec1",
                 "shasum": ""
             },
             "require": {
@@ -131,7 +135,7 @@
                 "api",
                 "email"
             ],
-            "time": "2014-06-09 21:40:35"
+            "time": "2014-10-30 20:38:12"
         },
         {
             "name": "psr/log",
@@ -177,12 +181,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/raven-php.git",
-                "reference": "dc64b9a45211c4efb25c95334eb103d2945a09d3"
+                "reference": "ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/raven-php/zipball/dc64b9a45211c4efb25c95334eb103d2945a09d3",
-                "reference": "dc64b9a45211c4efb25c95334eb103d2945a09d3",
+                "url": "https://api.github.com/repos/getsentry/raven-php/zipball/ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f",
+                "reference": "ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f",
                 "shasum": ""
             },
             "require": {
@@ -221,7 +225,7 @@
                 "log",
                 "logging"
             ],
-            "time": "2014-09-24 15:51:54"
+            "time": "2014-10-27 15:24:47"
         },
         {
             "name": "tqn/cache-queue",
@@ -229,12 +233,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "f968674b26737e2c200f1faf6d84401d2c35f55f"
+                "reference": "c4ee7f28ed76e5b9ae00a67505e15d294f7cddf2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/f968674b26737e2c200f1faf6d84401d2c35f55f",
-                "reference": "f968674b26737e2c200f1faf6d84401d2c35f55f",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/c4ee7f28ed76e5b9ae00a67505e15d294f7cddf2",
+                "reference": "c4ee7f28ed76e5b9ae00a67505e15d294f7cddf2",
                 "shasum": ""
             },
             "type": "library",
@@ -254,7 +258,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2014-10-13 15:10:53"
+            "time": "2014-11-14 10:13:36"
         }
     ],
     "packages-dev": [
