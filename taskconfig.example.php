@@ -51,6 +51,15 @@ $config['tasks']['likes'] = array('\\CacheQueue\\Task\\Social', 'getLikes');
  */
 $config['tasks']['plusones'] = array('\\CacheQueue\\Task\\Social', 'getPlusOnes');
 
+
+/*
+ * get the xing shares of a url
+ * params:
+ * the absolute URL to get xing shares for as string
+ */
+$config['tasks']['xingshares'] = array('\\CacheQueue\\Task\\Social', 'getXingShares');
+
+
 /*
  * get twitter timeline
  * you need a twitter app to use this.
