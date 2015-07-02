@@ -53,16 +53,16 @@
         },
         {
             "name": "graylog2/gelf-php",
-            "version": "1.2.3",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bzikarsky/gelf-php.git",
-                "reference": "199bfcb100d398401b31345fe7cc784091bda944"
+                "reference": "8ef55771cb33acc1814ae68440f94d38b6cd8873"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/199bfcb100d398401b31345fe7cc784091bda944",
-                "reference": "199bfcb100d398401b31345fe7cc784091bda944",
+                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/8ef55771cb33acc1814ae68440f94d38b6cd8873",
+                "reference": "8ef55771cb33acc1814ae68440f94d38b6cd8873",
                 "shasum": ""
             },
             "require": {
@@ -93,7 +93,7 @@
                 }
             ],
             "description": "A php implementation to send log-messages to a GELF compatible backend like Graylog2.",
-            "time": "2015-04-10 06:58:42"
+            "time": "2015-06-15 12:28:40"
         },
         {
             "name": "mailchimp/mailchimp",
@@ -237,12 +237,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "f9884ce05f3f17e1cc47b29996edbf76654f53f8"
+                "reference": "009f46b80e1711f57471cf025bee5c03b6e253d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/f9884ce05f3f17e1cc47b29996edbf76654f53f8",
-                "reference": "f9884ce05f3f17e1cc47b29996edbf76654f53f8",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/009f46b80e1711f57471cf025bee5c03b6e253d2",
+                "reference": "009f46b80e1711f57471cf025bee5c03b6e253d2",
                 "shasum": ""
             },
             "type": "library",
@@ -262,7 +262,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2015-05-22 12:53:37"
+            "time": "2015-07-02 14:30:47"
         }
     ],
     "packages-dev": [],
