@@ -11,6 +11,15 @@ $config = array();
     $config['general']['workerscript_bg_exitAfterTasksCount'] = 100; //exit bg script after 100 Tasks without break
     $config['general']['workerscript_bg_exitAfterMoreThanSeconds'] = 60; //exit bg script after 60 seconds without a break
 
+// --- API SETTINGS --- //
+
+    //api keys that have access to the api with allowed actions as array - 'key' => array('GET', 'SET', 'QUEUE', 'REMOVE')
+    $config['api']['keys'] = array(
+        //DO NOT USE THESE EXAMPLE-KEYS - CHANGE THEM BEFORE ACTIVATING THE API!
+        //'dusknRAXAwUmVQNUkQcYX0HLaLO4YpMA' => array('GET'), //example read-only user
+        //'Oz2CxhtGIsNUwoYJJhIJmBWDPMc2cPsg' => array('GET', 'SET', 'QUEUE', 'REMOVE') //example user with full access
+    );
+
 // --- TASKS --- //  
     
     include 'taskconfig.php';
