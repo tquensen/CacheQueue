@@ -222,7 +222,7 @@ $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEvent
 /*
  * oAuth2 / API v3 version!
  * 
- * get list of urls ith the most pageviews
+ * get list of urls ith the most pageviews/visits
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
@@ -244,6 +244,7 @@ $config['tasks']['eventdata'] = array('\\CacheQueue\\Task\\Analytics', 'getEvent
  *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
  *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'count' => 'limit results to this number (overwrites count option)',
+ *   'metric' => 'the metric to use (pageviews, uniquePageviews, visits, .., default = pageviews)',
  *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
  *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
  *   'refreshToken' => 'the oAuth2 refresh token'
@@ -265,7 +266,7 @@ $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls
 /*
  * oAuth2 / API v3 version!
  * 
- * get list of keywords with the most pageviews
+ * get list of keywords with the most pageviews/visits
  * you need a registered oAuth2 application on the server/task side,
  * and an Analytics Account and a refresh token on the client side
  * 
@@ -287,6 +288,7 @@ $config['tasks']['topurls'] = array('\\CacheQueue\\Task\\Analytics', 'getTopUrls
  *   'hostname' => 'the hostname to filter for. (optional, e.g. example.com)'
  *   'operator' => 'the filter operator for the pagePath (not URL encoded). optional, default is '==' (see https://developers.google.com/analytics/devguides/reporting/core/v3/reference#filters)
  *   'count' => 'limit results to this number (overwrites count option)',
+ *   'metric' => 'the metric to use (pageviews, uniquePageviews, visits, .., default = pageviews)',
  *   'dateFrom' => 'only consider pageviews newer than his date (format Y-m-d). optional, default is 2005-01-01.',
  *   'dateTo' => 'only consider pageviews older than his date (format Y-m-d). optional, default is the current day.'
  *   'refreshToken' => 'the oAuth2 refresh token'

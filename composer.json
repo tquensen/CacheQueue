@@ -14,7 +14,7 @@
         },
         {
             "type": "vcs",
-            "url": "https://bitbucket.org/mailchimp/mailchimp-api-php"
+            "url": "https://bitbucket.org/mailchimp/mailchimp-api-php.git"
         }
     ],    
     "require": {

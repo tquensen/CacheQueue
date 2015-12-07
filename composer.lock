@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "127317fcba14690101961a613c3b3b64",
+    "hash": "c80c7ab85c3a55b3eec683e88500b4b6",
     "packages": [
         {
             "name": "google/apiclient",
@@ -53,20 +53,20 @@
         },
         {
             "name": "graylog2/gelf-php",
-            "version": "1.3.0",
+            "version": "1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bzikarsky/gelf-php.git",
-                "reference": "8ef55771cb33acc1814ae68440f94d38b6cd8873"
+                "reference": "4230f22e2944f377b057edbc31c35a360edfbce9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/8ef55771cb33acc1814ae68440f94d38b6cd8873",
-                "reference": "8ef55771cb33acc1814ae68440f94d38b6cd8873",
+                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/4230f22e2944f377b057edbc31c35a360edfbce9",
+                "reference": "4230f22e2944f377b057edbc31c35a360edfbce9",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3",
+                "php": ">=5.3.9",
                 "psr/log": "~1.0"
             },
             "provide": {
@@ -77,6 +77,11 @@
                 "squizlabs/php_codesniffer": "~2.0"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.3.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "Gelf\\": "src/Gelf"
@@ -90,17 +95,21 @@
                 {
                     "name": "Benjamin Zikarsky",
                     "email": "benjamin@zikarsky.de"
+                },
+                {
+                    "name": "gelf-php contributors",
+                    "homepage": "https://github.com/bzikarsky/gelf-php/contributors"
                 }
             ],
             "description": "A php implementation to send log-messages to a GELF compatible backend like Graylog2.",
-            "time": "2015-06-15 12:28:40"
+            "time": "2015-10-22 15:07:05"
         },
         {
             "name": "mailchimp/mailchimp",
             "version": "2.0.6",
             "source": {
                 "type": "hg",
-                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php",
+                "url": "https://bitbucket.org/mailchimp/mailchimp-api-php.git",
                 "reference": "7ac99b5ac746d5875c5c350ad7e3b83674c83ec1"
             },
             "dist": {
@@ -237,12 +246,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "009f46b80e1711f57471cf025bee5c03b6e253d2"
+                "reference": "e0ace0e68f9bfcb376264192050d93742b6bc3eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/009f46b80e1711f57471cf025bee5c03b6e253d2",
-                "reference": "009f46b80e1711f57471cf025bee5c03b6e253d2",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/e0ace0e68f9bfcb376264192050d93742b6bc3eb",
+                "reference": "e0ace0e68f9bfcb376264192050d93742b6bc3eb",
                 "shasum": ""
             },
             "type": "library",
@@ -262,7 +271,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2015-07-02 14:30:47"
+            "time": "2015-12-07 14:25:34"
         }
     ],
     "packages-dev": [],
