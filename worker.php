@@ -17,6 +17,26 @@ $configFile = __DIR__.'/config.php';
 $config = array();
 require_once($configFile);
 
+
+if (in_array('--debug', $argv)) {
+    $debug = true;
+} else {
+    $debug = false;
+}
+
+
+if ($debug) {
+    $loggerConfig = array(
+        'stream' => 'output',
+        'logLevel' => 7,
+        'loggerClass' => $config['classes']['logger'],
+        'loggerConfig' => $config['logger']
+    );
+
+    $config['classes']['logger'] = '\\CacheQueue\\Logger\\Debug';
+    $config['logger'] = $loggerConfig;
+}
+
 $factory = new \CacheQueue\Factory\Factory($config);
 
 $logger = $factory->getLogger();
@@ -35,12 +55,6 @@ $noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTask
 //log a "status" message if a single task data is larger than X bytes
 $noticeLargeDataMoreThanBytes = $config['general']['workerscript_noticeLargeDataMoreThanBytes'];
 
-if (in_array('--debug', $argv)) {
-    $debug = true;
-} else {
-    $debug = false;
-}
-
 $start = microtime(true);
 $time = 0;
 $processed = 0;
@@ -53,7 +67,7 @@ do {
             $status = null;
             try {
                 if ($job = $worker->getJob()) {
-                    if ($debug) echo 'running job '.$job['key']. ' ('.$job['task'].')'."\n";
+                    if ($debug) $logger->logDebug('start running job '.$job['key']. ' ('.$job['task'].')');
                     $jobStart = microtime(true);
                     $result = $worker->work($job);
                     $jobEnd = microtime(true);
@@ -66,17 +80,17 @@ do {
                             $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') data size is '.$hrSize.'.');
                         }
                     }
+                    if ($debug) $logger->logDebug('done  running job '.$job['key']. ' ('.$job['task'].')');
+                    
                     if ($jobEnd - $jobStart > $noticeSlowTaskMoreThanSeconds) {
                         $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') took '.(number_format($jobEnd - $jobStart, 4,'.','')).'s.');
                     }
-                    if ($debug) echo 'done...'."\n";
                 } else {
                     //pause processing for 1 sec if no queued task was found
                     break;
                 }
             } catch (\CacheQueue\Exception\Exception $e) {
-                //log CacheQueue exceptions 
-                if ($debug) echo $e."\n";
+                //log CacheQueue exceptions
                 $errors++;
                 $logger->logException($e);
                 unset ($e);
@@ -104,7 +118,6 @@ do {
         }
     } catch (Exception $e) {
         //handle exceptions
-        if ($debug) echo $e."\n";
         $logger->logException($e);
         exit;
     }

@@ -31,7 +31,7 @@ $config = array();
         'connection' => '\\CacheQueue\\Connection\\APCProxy', //'\\CacheQueue\\Connection\\Mongo' or '\\CacheQueue\\Connection\\MySQL' or '\\CacheQueue\\Connection\\Dummy' // '\\CacheQueue\\Connection\\Redis' is not ready
         'client' => '\\CacheQueue\\Client\\Basic',
         'worker' => '\\CacheQueue\\Worker\\Basic',
-        'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog' OR '\\CacheQueue\\Logger\\Sentry'
+        'logger' => '\\CacheQueue\\Logger\\File' // OR '\\CacheQueue\\Logger\\Graylog' OR '\\CacheQueue\\Logger\\Sentry'  OR '\\CacheQueue\\Logger\\Debug'
     );
 
 // --- CLIENT SETTINGS --- //      
@@ -145,6 +145,18 @@ $config = array();
         'registerExceptionHandler' => false, //set the Raven_ErrorHandler as exception handler
         'showPid' => false, //display the process ID in the logfile - useful when multiple workers are running
         'logLevel' => 6 // LOG_NONE = 0, LOG_DEBUG = 1, LOG_NOTICE = 2, LOG_ERROR = 4, LOG_ALL = 7 or a combination (LOG_ERROR and LOG_NOTICE = 6)
+    );
+
+    //DebugLogger
+    //outputs all logs to a given outputstream (output, stdout, stderr)
+    //and optionally wraps another logger to maintain the normal logging
+    $debugLogger = array(
+        'stream' => 'output', //OR 'stdout' OR 'stderr'
+        'showPid' => false, //display the process ID in the logmessages - useful when multiple workers are running
+        'logLevel' => 7, // LOG_NONE = 0, LOG_DEBUG = 1, LOG_NOTICE = 2, LOG_ERROR = 4, LOG_ALL = 7 or a combination (LOG_ERROR and LOG_NOTICE = 6)
+        'loggerClass' => '\\CacheQueue\\Logger\\File', //optional: class of the real logger to use (File, Graylog, Sentry, ..)
+        'loggerFile' => 'CacheQueue/Logger/File.php', //this file will be included to load the logger class. you can remove this if you use an autoloader
+        'loggerConfig' => $fileLogger
     );
 
     $config['logger'] = $fileLogger;
