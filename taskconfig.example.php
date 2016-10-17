@@ -30,6 +30,23 @@ $config['tasks']['store'] = array('\\CacheQueue\\Task\\Misc', 'store');
 $config['tasks']['loadurl'] = array('\\CacheQueue\\Task\\Misc', 'loadUrl');
 
 /*
+ * get donreach share counts of an url
+ *
+ * @see https://donreach.com/social-share-count
+ *
+ * params:
+ * an array with
+ *  'url' => 'the url to get the social shares for'
+ *  'providers' => 'comma separated list of providers, e.g. "twitter,facebook,linkedin" or "all"'
+ *
+ * options:
+ *   'endpoint' => 'the donreach api url, e.g. "https://count.donreach.com/"'
+ */
+$config['tasks']['donreach'] = array('\\CacheQueue\\Task\\Social', 'getDonReachShares', array(
+    'endpoint' => 'https://count.donreach.com/'
+));
+
+/*
  * get the retweets of a url
  * 
  * params:
