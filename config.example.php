@@ -45,7 +45,7 @@ $config = array();
 // --- CONNECTION SETTINGS --- //  
   
     
-    //settings for mongodb
+    //settings for mongodb (legacy driver)
     /*
      * run \CacheQueue\Connection\Mongo->setup() to generate indices
      */  
@@ -58,6 +58,22 @@ $config = array();
             //'wTimeout' => 2000,
             //'username' => 'username',
             //'password' => 'password'
+        )
+    );
+
+    //settings for mongodb https://docs.mongodb.com/php-library/master/
+    /*
+     * run \CacheQueue\Connection\MongoDB->setup() to generate indices
+     */
+    $mongoDBConnection = array(
+        //'uri' => 'mongodb://[username:password@]host1[:port1]', //optional, default is 'mongodb://127.0.0.1/' (see https://docs.mongodb.com/php-library/master/reference/method/MongoDBClient__construct/)
+        'database' => 'cache_queue',
+        'collection' => 'cache',
+        'uriOptions' => array( // see http://php.net/mongodb-driver-manager.construct
+            //'username' => 'username',
+            //'password' => 'password'
+        ),
+        'driverOptions' => array(
         )
     );
      
