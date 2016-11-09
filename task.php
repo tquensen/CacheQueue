@@ -4,7 +4,7 @@
 if (empty($_SERVER['argc'])) {
     die();
 }
-    
+
 //init composer autoloader
 $loader = require __DIR__.'/vendor/autoload.php';
 
@@ -29,8 +29,8 @@ try {
         if (strtolower($_SERVER['argv'][1]) == 'setup' || strtolower($_SERVER['argv'][1]) == 'clearqueue' || strtolower($_SERVER['argv'][1]) == 'status') {
             $key = null;
         } elseif (strtolower($_SERVER['argv'][1]) == 'count') {
-            $key = 'ALL';    
-        } elseif (strtolower($_SERVER['argv'][1]) == 'cleanup') {    
+            $key = 'ALL';
+        } elseif (strtolower($_SERVER['argv'][1]) == 'cleanup') {
             echo 'Error: outdated-time required as first parameter'."\n";
             echo 'Examples:'."\n";
             echo 'cleanup 3600'."\t".'removes all entries that are outdated for at least 1 hour'."\n";
@@ -87,19 +87,20 @@ try {
     }
 
     switch (strtolower($_SERVER['argv'][1])) {
-        case 'get':      
+        case 'get':
             if (trim(strtolower($key)) == 'tag') {
                 $results = $connection->getByTag($tag, $force ? false : true);
-                 echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
-                 foreach ($results as $data) {
+                echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
+                foreach ($results as $data) {
                     echo "\n".'Data for entry "'.$data['key'].'":'."\n";
                     echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
                     echo "\t".'fresh until:    '.date('Y-m-d H:i:s', $data['fresh_until'])."\n";
+                    echo "\t".'date set:       '.date('Y-m-d H:i:s', $data['date_set'])."\n";
                     echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
                     echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
                     echo "\t".'queue fresh until: '.date('Y-m-d H:i:s', $data['queue_fresh_until'])."\n";
                     echo "\t".'data:       '.print_r($data['data'], true)."\n";
-                }     
+                }
             } else {
                 $data = $connection->get($key);
                 if (!$data) {
@@ -108,18 +109,19 @@ try {
                     echo 'Data for entry "'.$key.'":'."\n";
                     echo "\t".'is fresh:       '.($data['is_fresh'] ? 'yes' : 'no')."\n";
                     echo "\t".'fresh until:    '.date('Y-m-d H:i:s', $data['fresh_until'])."\n";
+                    echo "\t".'date set:       '.date('Y-m-d H:i:s', $data['date_set'])."\n";
                     echo "\t".'tags:       '.implode(', ', $data['tags'])."\n";
                     echo "\t".'queue is fresh: '.($data['queue_is_fresh'] ? 'yes' : 'no')."\n";
                     echo "\t".'queue fresh until: '.date('Y-m-d H:i:s', $data['queue_fresh_until'])."\n";
                     echo "\t".'data:       '.print_r($data['data'], true)."\n";
-                }     
+                }
             }
             break;
         case 'getdata':
             if (trim(strtolower($key)) == 'tag') {
                 $results = $connection->getByTag($tag, $force ? false : true);
-                 echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
-                 foreach ($results as $data) {
+                echo 'Cache entries for tag "'.$tag.'" '.($force ? 'all' : 'fresh').' found: '.count($results)."\n";
+                foreach ($results as $data) {
                     echo "\n".'Data for entry "'.$data['key'].'":'."\n";
                     echo print_r($data['data'], true)."\n";
                 }
@@ -136,16 +138,16 @@ try {
         case 'count':
             if (trim(strtolower($key)) == 'all') {
                 $count = $connection->countAll($fresh);
-                echo $count.($option ? ' '.$option : '').' entries found.'."\n"; 
+                echo $count.($option ? ' '.$option : '').' entries found.'."\n";
             } else {
                 if (strtolower($key) != 'tag') {
                     $tag = $key;
                 }
                 $count = $connection->countByTag($tag, $fresh);
-                echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n"; 
+                echo $count.($option ? ' '.$option : '').' entries with tag "'.$tag.'" found.'."\n";
             }
             break;
-        case 'remove':      
+        case 'remove':
             if (trim(strtolower($key)) == 'all') {
                 $status = $connection->removeAll($force);
                 echo 'Removing all matching entries: '.($status ? 'OK' : 'ERROR')."\n";
@@ -184,16 +186,16 @@ try {
         case 'clearqueue':
             $status = $connection->clearQueue();
             echo 'Removing all entries from Queue: '.($status ? 'OK' : 'ERROR')."\n";
-            break;        
+            break;
         case 'status':
             echo 'CacheQueue status:'."\n";
-                $queueCount = $connection->getQueueCount();
-                $entryCount = $connection->countAll();
-                $freshCount = $connection->countAll(true);
-                $outdatedCount = $connection->countAll(false);
-                echo $entryCount . ' cached entries ('.$freshCount.' fresh, '.$outdatedCount.' outdated).'."\n";
-                echo $queueCount . ' tasks currently in queue.'."\n";
-            break;    
+            $queueCount = $connection->getQueueCount();
+            $entryCount = $connection->countAll();
+            $freshCount = $connection->countAll(true);
+            $outdatedCount = $connection->countAll(false);
+            echo $entryCount . ' cached entries ('.$freshCount.' fresh, '.$outdatedCount.' outdated).'."\n";
+            echo $queueCount . ' tasks currently in queue.'."\n";
+            break;
         default:
             echo 'Unknown task "'.$_SERVER['argv'][1].'"'."\n";
             break;
