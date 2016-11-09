@@ -4,7 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "c80c7ab85c3a55b3eec683e88500b4b6",
+    "hash": "c797499982a635df7cb20c905de99097",
+    "content-hash": "2e49dc63d60cf6a0d65c05162ce590d7",
     "packages": [
         {
             "name": "google/apiclient",
@@ -53,16 +54,16 @@
         },
         {
             "name": "graylog2/gelf-php",
-            "version": "1.4.1",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bzikarsky/gelf-php.git",
-                "reference": "4230f22e2944f377b057edbc31c35a360edfbce9"
+                "reference": "bc1175a5b40f585e69a017647286d84211e82544"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/4230f22e2944f377b057edbc31c35a360edfbce9",
-                "reference": "4230f22e2944f377b057edbc31c35a360edfbce9",
+                "url": "https://api.github.com/repos/bzikarsky/gelf-php/zipball/bc1175a5b40f585e69a017647286d84211e82544",
+                "reference": "bc1175a5b40f585e69a017647286d84211e82544",
                 "shasum": ""
             },
             "require": {
@@ -79,7 +80,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.3.x-dev"
+                    "dev-master": "1.4.x-dev"
                 }
             },
             "autoload": {
@@ -102,13 +103,13 @@
                 }
             ],
             "description": "A php implementation to send log-messages to a GELF compatible backend like Graylog2.",
-            "time": "2015-10-22 15:07:05"
+            "time": "2016-06-02 06:04:56"
         },
         {
             "name": "mailchimp/mailchimp",
             "version": "2.0.6",
             "source": {
-                "type": "hg",
+                "type": "git",
                 "url": "https://bitbucket.org/mailchimp/mailchimp-api-php.git",
                 "reference": "7ac99b5ac746d5875c5c350ad7e3b83674c83ec1"
             },
@@ -150,23 +151,86 @@
             "time": "2014-10-30 20:38:12"
         },
         {
-            "name": "psr/log",
-            "version": "1.0.0",
+            "name": "mongodb/mongodb",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/php-fig/log.git",
-                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b"
+                "url": "https://github.com/mongodb/mongo-php-library.git",
+                "reference": "3c742f3ceffc4dc67fee02dc6ebfc2e7cb403b7c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/fe0936ee26643249e916849d48e3a51d5f5e278b",
-                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b",
+                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/3c742f3ceffc4dc67fee02dc6ebfc2e7cb403b7c",
+                "reference": "3c742f3ceffc4dc67fee02dc6ebfc2e7cb403b7c",
                 "shasum": ""
+            },
+            "require": {
+                "ext-mongodb": "^1.1.0",
+                "php": ">=5.4"
             },
             "type": "library",
             "autoload": {
-                "psr-0": {
-                    "Psr\\Log\\": ""
+                "psr-4": {
+                    "MongoDB\\": "src/"
+                },
+                "files": [
+                    "src/functions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Jeremy Mikola",
+                    "email": "jmikola@gmail.com"
+                },
+                {
+                    "name": "Hannes Magnusson",
+                    "email": "bjori@mongodb.com"
+                },
+                {
+                    "name": "Derick Rethans",
+                    "email": "github@derickrethans.nl"
+                }
+            ],
+            "description": "MongoDB driver library",
+            "homepage": "https://jira.mongodb.org/browse/PHPLIB",
+            "keywords": [
+                "database",
+                "driver",
+                "mongodb",
+                "persistence"
+            ],
+            "time": "2016-09-23 19:38:29"
+        },
+        {
+            "name": "psr/log",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "Psr/Log/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -180,29 +244,29 @@
                 }
             ],
             "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
             "keywords": [
                 "log",
                 "psr",
                 "psr-3"
             ],
-            "time": "2012-12-21 11:40:51"
+            "time": "2016-10-10 12:19:37"
         },
         {
             "name": "raven/raven",
-            "version": "dev-master",
+            "version": "0.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/raven-php.git",
-                "reference": "ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f"
+                "reference": "d4b741736125f2b892e07903cd40450b53479290"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/raven-php/zipball/ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f",
-                "reference": "ca8bbc628f5b29c9c66fb9547cf17e2806ce9b0f",
+                "url": "https://api.github.com/repos/getsentry/raven-php/zipball/d4b741736125f2b892e07903cd40450b53479290",
+                "reference": "d4b741736125f2b892e07903cd40450b53479290",
                 "shasum": ""
             },
             "require": {
-                "ext-curl": "*",
                 "php": ">=5.2.4"
             },
             "require-dev": {
@@ -214,7 +278,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.8.x-dev"
+                    "dev-master": "0.7.x-dev"
                 }
             },
             "autoload": {
@@ -238,7 +302,8 @@
                 "log",
                 "logging"
             ],
-            "time": "2014-10-27 15:24:47"
+            "abandoned": "sentry/sentry",
+            "time": "2013-12-03 10:27:59"
         },
         {
             "name": "tqn/cache-queue",
@@ -246,12 +311,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tquensen/CacheQueueCore.git",
-                "reference": "95787abe7c738ca3923b1663808b269b4ad68750"
+                "reference": "31af7470b8736ec3843ab43fcdcd2c4eadb46cf8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/95787abe7c738ca3923b1663808b269b4ad68750",
-                "reference": "95787abe7c738ca3923b1663808b269b4ad68750",
+                "url": "https://api.github.com/repos/tquensen/CacheQueueCore/zipball/31af7470b8736ec3843ab43fcdcd2c4eadb46cf8",
+                "reference": "31af7470b8736ec3843ab43fcdcd2c4eadb46cf8",
                 "shasum": ""
             },
             "type": "library",
@@ -271,7 +336,7 @@
                 "source": "https://github.com/tquensen/CacheQueueCore/tree/master",
                 "issues": "https://github.com/tquensen/CacheQueueCore/issues"
             },
-            "time": "2015-12-08 11:53:28"
+            "time": "2016-11-09 09:55:28"
         }
     ],
     "packages-dev": [],
