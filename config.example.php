@@ -11,6 +11,14 @@ $config = array();
     $config['general']['workerscript_bg_exitAfterTasksCount'] = 100; //exit bg script after 100 Tasks without break
     $config['general']['workerscript_bg_exitAfterMoreThanSeconds'] = 60; //exit bg script after 60 seconds without a break
 
+// --- CHANNEL SETTINGS --- //
+
+    //define your channels here. The values must me positive integers (1-255)
+    $config['channels'] = array(
+        'default' => 1,
+        'fastlane' => 2
+    );
+
 // --- API SETTINGS --- //
 
     //api keys that have access to the api with allowed actions as array - 'key' => array('GET', 'SET', 'QUEUE', 'REMOVE')
@@ -36,7 +44,9 @@ $config = array();
 
 // --- CLIENT SETTINGS --- //      
     
-    $config['client'] = array(); //BASIC client class doesn't need configuration
+    $config['client'] = array(
+        'channels' => $config['channels']
+    );
     
 // --- WORKER SETTINGS --- //      
     

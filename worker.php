@@ -17,13 +17,11 @@ $configFile = __DIR__.'/config.php';
 $config = array();
 require_once($configFile);
 
-
 if (in_array('--debug', $argv)) {
     $debug = true;
 } else {
     $debug = false;
 }
-
 
 if ($debug) {
     $loggerConfig = array(
@@ -35,6 +33,14 @@ if ($debug) {
 
     $config['classes']['logger'] = '\\CacheQueue\\Logger\\Debug';
     $config['logger'] = $loggerConfig;
+}
+
+$channelName = 'default';
+foreach ($argv as $arg) {
+    if (strpos('--channel=', $arg) === 0) {
+        $channelName = substr($arg, 10);
+        break;
+    }
 }
 
 $factory = new \CacheQueue\Factory\Factory($config);
@@ -55,18 +61,26 @@ $noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTask
 //log a "status" message if a single task data is larger than X bytes
 $noticeLargeDataMoreThanBytes = $config['general']['workerscript_noticeLargeDataMoreThanBytes'];
 
+if (!empty($config['channels'][$channelName]) && (int) $config['channels'][$channelName] > 0) {
+    $channel = (int) $config['channels'][$channelName];
+} else {
+    $logger->logError('Worker: Invalid channel "'.$channelName.'"');
+    echo 'Invalid channel "'.$channelName.'"' . "\n";
+    exit;
+}
+
 $start = microtime(true);
 $time = 0;
 $processed = 0;
 $errors = 0;
+
 do {   
     try {
-        
         do {          
             $ts = microtime(true);
             $status = null;
             try {
-                if ($job = $worker->getJob()) {
+                if ($job = $worker->getJob($channel)) {
                     if ($debug) $logger->logDebug('start running job '.$job['key']. ' ('.$job['task'].')');
                     $jobStart = microtime(true);
                     $result = $worker->work($job);
@@ -80,7 +94,7 @@ do {
                             $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') data size is '.$hrSize.'.');
                         }
                     }
-                    if ($debug) $logger->logDebug('done  running job '.$job['key']. ' ('.$job['task'].')');
+                    if ($debug) $logger->logDebug('done running job '.$job['key']. ' ('.$job['task'].')');
                     
                     if ($jobEnd - $jobStart > $noticeSlowTaskMoreThanSeconds) {
                         $logger->logNotice('Worker: Job '.$job['key'].' (task '.$job['task'].') took '.(number_format($jobEnd - $jobStart, 4,'.','')).'s.');
@@ -96,13 +110,11 @@ do {
                 unset ($e);
             }
 
-            
-
             $processed++;
             $time += microtime(true) - $ts;
             if ($noticeAfterTasksCount && !($processed % $noticeAfterTasksCount)) {
                 $end = microtime(true);
-                $count = $connection->getQueueCount();
+                $count = $connection->getQueueCount($channel);
                 $logger->logNotice('Worker: running, processed '.$processed.' tasks ('.$errors.' errors), '.(int)$count.' tasks remaining. took '.(number_format($time, 4,'.','')).'s so far... (gc:'.gc_collect_cycles().')');
             }             
         } while (true);       

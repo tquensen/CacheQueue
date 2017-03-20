@@ -17,6 +17,14 @@ $configFile = __DIR__.'/config.php';
 $config = array();
 require_once($configFile);
 
+$channelName = 'default';
+foreach ($argv as $arg) {
+    if (strpos('--channel=', $arg) === 0) {
+        $channelName = substr($arg, 10);
+        break;
+    }
+}
+
 $factory = new \CacheQueue\Factory\Factory($config);
 
 $logger = $factory->getLogger();
@@ -34,16 +42,21 @@ $noticeSlowTaskMoreThanSeconds = $config['general']['workerscript_noticeSlowTask
 //log a "status" message if a single task data is larger than X bytes
 $noticeLargeDataMoreThanBytes = $config['general']['workerscript_noticeLargeDataMoreThanBytes'];
 
+if (!empty($config['channels'][$channelName]) && (int) $config['channels'][$channelName] > 0) {
+    $channel = (int) $config['channels'][$channelName];
+} else {
+    $logger->logError('Worker: Invalid channel "'.$channelName.'"');
+    exit;
+}
+
 $start = microtime(true);
 $processed = 0;
 $errors = 0;
 
 try {
-
-    do {     
-        
+    do {
         try {
-            if ($job = $worker->getJob()) {
+            if ($job = $worker->getJob($channel)) {
                 $jobStart = microtime(true);
                 $result = $worker->work($job);
                 $jobEnd = microtime(true);

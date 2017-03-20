@@ -17,6 +17,14 @@ $configFile = __DIR__.'/config.php';
 $config = array();
 require_once($configFile);
 
+$channelName = 'default';
+foreach ($argv as $arg) {
+    if (strpos('--channel=', $arg) === 0) {
+        $channelName = substr($arg, 10);
+        break;
+    }
+}
+
 $factory = new \CacheQueue\Factory\Factory($config);
 
 $logger = $factory->getLogger();
@@ -27,6 +35,14 @@ $workerFile = __DIR__.'/worker_bg.php';
 //log a "status" message only after X seconds
 $noticeAfterMoreThanSeconds = $config['general']['workerscript_noticeAfterMoreThanSeconds'];
 
+if (!empty($config['channels'][$channelName]) && (int) $config['channels'][$channelName] > 0) {
+    $channel = (int) $config['channels'][$channelName];
+} else {
+    $logger->logError('Worker: Invalid channel "'.$channelName.'"');
+    echo 'Invalid channel "'.$channelName.'"' . "\n";
+    exit;
+}
+
 $start = microtime(true);
 $time = 0;
 $processed = 0;
@@ -34,10 +50,10 @@ $errors = 0;
 
 do {
     try {
-        if ($connection->getQueueCount()) {
+        if ($connection->getQueueCount($channel)) {
             try {
                 $ts = microtime(true);
-                $response = exec($workerFile);
+                $response = exec($workerFile . ' --channel='.escapeshellarg($channelName));
                 if ($response && strpos($response, '|')) {
                     list($newProcessed, $newErrors) = explode('|', $response);
                     $processed += (int) $newProcessed;
@@ -61,13 +77,12 @@ do {
     
     $end = microtime(true);
     if ($processed && (!$noticeAfterMoreThanSeconds || ($end - $start > $noticeAfterMoreThanSeconds))) {
-        $queueCount = $connection->getQueueCount();
+        $queueCount = $connection->getQueueCount($channel);
         $logger->logNotice('Worker: Processed '.$processed.' tasks ('.$errors.' errors). took '.(number_format($time, 4,'.','')).'s. '.$queueCount.' tasks left (gc:'.gc_collect_cycles().')');
         $start = microtime(true);
         $processed = 0;
         $errors = 0;
         $time = 0;
     }
-    
     sleep(1);
 } while(true);
